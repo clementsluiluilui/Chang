@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Planning V3 - Repas</title>
+<title>Mon Planning V3.1 - Repas</title>
 <style>
 .ti { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; font-style: normal; vertical-align: -0.125em; }
 .ti svg { width: 100%; height: 100%; display: block; }
@@ -489,7 +489,7 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 <div class="topbar">
   <div class="app-title">
     <i class="ti ti-layout-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></i>
-    Mon Planning V3
+    Mon Planning V3.1
   </div>
   <div class="topbar-right">
     <div class="date-badge" id="date-badge"></div>
@@ -928,6 +928,9 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 <div id="sync-modal-overlay" onclick="if(event.target===this)closeSyncModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:999;align-items:center;justify-content:center;">
   <div style="background:var(--bg);border-radius:var(--radius-lg);padding:22px;max-width:380px;width:90%;box-shadow:0 8px 30px rgba(0,0,0,.2);">
     <h4 style="margin-bottom:10px;">Synchroniser entre appareils</h4>
+    <div id="sync-warning" style="display:none;background:#fee;color:#b00;border:1px solid #f99;border-radius:8px;padding:8px 10px;font-size:12px;margin-bottom:10px;">
+      ⚠️ La synchronisation n'a pas pu s'initialiser sur cet appareil (navigateur trop ancien ou hors-ligne). Essaie de mettre à jour le navigateur ou d'utiliser Chrome à jour.
+    </div>
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
       Chaque appareil a un identifiant de sync. Pour lier ton téléphone et ton PC, copie l'identifiant d'un appareil et colle-le sur l'autre : ils partageront alors les mêmes données.
     </p>
@@ -4094,6 +4097,8 @@ function openSyncModal() {
   const idField = document.getElementById('sync-id-display');
   idField.value = window.getSyncId ? window.getSyncId() : localStorage.getItem('myplanning-deviceId') || '';
   document.getElementById('sync-id-input').value = '';
+  const warnEl = document.getElementById('sync-warning');
+  if(warnEl) warnEl.style.display = window.firebaseReady ? 'none' : 'block';
   document.getElementById('sync-modal-overlay').style.display = 'flex';
 }
 function closeSyncModal() {
@@ -4106,7 +4111,14 @@ function copySyncId() {
 }
 function applySyncId() {
   const val = document.getElementById('sync-id-input').value.trim();
-  if(!val) return;
+  if(!val) {
+    showToast('⚠️ Colle d\'abord un identifiant dans le champ');
+    return;
+  }
+  if(!window.setSyncId) {
+    alert("La synchronisation n'a pas pu s'initialiser sur cet appareil (navigateur trop ancien ou hors-ligne). Essaie de recharger la page, ou utilise un autre navigateur (Chrome à jour) sur cet appareil.");
+    return;
+  }
   if(!confirm("Lier cet appareil à cet identifiant ? Les données locales de cet appareil seront remplacées par celles associées à cet identifiant au prochain chargement.")) return;
   window.setSyncId(val);
 }
