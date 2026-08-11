@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Planning V3.2 - Repas</title>
+<title>Mon Planning V3.3 - Repas</title>
 <style>
 .ti { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; font-style: normal; vertical-align: -0.125em; }
 .ti svg { width: 100%; height: 100%; display: block; }
@@ -489,7 +489,7 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 <div class="topbar">
   <div class="app-title">
     <i class="ti ti-layout-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></i>
-    Mon Planning V3.2
+    Mon Planning V3.3
   </div>
   <div class="topbar-right">
     <div class="date-badge" id="date-badge"></div>
@@ -4093,16 +4093,31 @@ function collectCompletedSubtasks(node, dateStr, breadcrumbLabel, out, colorHint
 }
 
 // ── SYNC MULTI-APPAREILS ──
+function showDebugBanner(msg) {
+  let el = document.getElementById('debug-banner');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'debug-banner';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#c00;color:#fff;padding:10px 14px;font-size:13px;z-index:99999;word-break:break-word;';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+}
 function openSyncModal() {
   try {
+    showDebugBanner('openSyncModal: début');
     const idField = document.getElementById('sync-id-display');
+    if(!idField) { showDebugBanner('Erreur: sync-id-display introuvable'); return; }
     idField.value = window.getSyncId ? window.getSyncId() : localStorage.getItem('myplanning-deviceId') || '';
     document.getElementById('sync-id-input').value = '';
     const warnEl = document.getElementById('sync-warning');
     if(warnEl) warnEl.style.display = window.firebaseReady ? 'none' : 'block';
-    document.getElementById('sync-modal-overlay').style.display = 'flex';
+    const overlay = document.getElementById('sync-modal-overlay');
+    if(!overlay) { showDebugBanner('Erreur: sync-modal-overlay introuvable'); return; }
+    overlay.style.display = 'flex';
+    showDebugBanner('openSyncModal: overlay ouvert, firebaseReady=' + window.firebaseReady);
   } catch(err) {
-    alert('Erreur bouton sync : ' + (err && err.message ? err.message : err));
+    showDebugBanner('Erreur bouton sync : ' + (err && err.message ? err.message : err));
   }
 }
 function closeSyncModal() {
