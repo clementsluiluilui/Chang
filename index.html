@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Planning V3.13 - Repas</title>
+<title>Mon Planning V3.15 - Repas</title>
 <style>
 .ti { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; font-style: normal; vertical-align: -0.125em; }
 .ti svg { width: 100%; height: 100%; display: block; }
@@ -527,12 +527,13 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
   </div>
   <div class="app-title">
     <i class="ti ti-layout-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></i>
-    Mon Planning V3.13
+    Mon Planning V3.15
   </div>
   <div class="topbar-right">
     <div class="date-badge" id="date-badge"></div>
     <button class="icon-only" onclick="toggleTheme()" title="Thème"><i class="ti ti-moon" id="theme-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 009 9 9 9 0 11-9-9z"/></svg></i></button>
     <button class="icon-only" onclick="openSyncModal()" title="Synchroniser entre appareils"><i class="ti ti-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h5M20 20v-5h-5M4.6 15A8 8 0 0019 15M19.4 9A8 8 0 004 9"/></svg></i></button>
+    <button onclick="loadDemoData()" title="Remplir l'application avec des données d'exemple pour tester"><i class="ti ti-flask"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2v6l-5 9a2 2 0 002 3h12a2 2 0 002-3l-5-9V2M9 2h6M8 15h8"/></svg></i> Démo</button>
     <button onclick="exportData()"><i class="ti ti-download"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v10m0 0l-3-3m3 3l3-3M5 19h14"/></svg></i> Exporter</button>
     <button onclick="document.getElementById('import-input').click()"><i class="ti ti-upload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V9m0 0l-3 3m3-3l3 3M5 19h14"/></svg></i> Importer</button>
     <button onclick="saveHtmlFile()" style="background:var(--blue);color:#fff;border-color:var(--blue)"><i class="ti ti-device-floppy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h10l4 4v12a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2zm6 14a3 3 0 100-6 3 3 0 000 6zm-2-14v4h6V4"/></svg></i> Sauvegarder</button>
@@ -1197,6 +1198,118 @@ function saveData() {
       });
     }, 2000);
   }
+}
+
+function loadDemoData() {
+  if(!confirm("Ça va ajouter environ un mois de données d'exemple (tâches, notes, habitudes, repas, séances, journal) à tes données actuelles (rien n'est supprimé). Continuer ?")) return;
+
+  const today = new Date();
+  const dateStr = (offsetDays) => { const d = new Date(today); d.setDate(d.getDate() - offsetDays); return formatDateString(d); };
+  const todayStr = dateStr(0);
+
+  // ── Dossiers et listes de démo ──
+  const demoFolderId = 'f'+Date.now()+Math.random().toString(36).slice(2,6);
+  const demoFolderId2 = 'f'+(Date.now()+1)+Math.random().toString(36).slice(2,6);
+  todoFolders.push({ id: demoFolderId, name: 'Démo - Maison' });
+  todoFolders.push({ id: demoFolderId2, name: 'Démo - Projets' });
+
+  todoLists.unshift({
+    id: Date.now()+1, folderId: demoFolderId, title: 'Courses de la semaine',
+    todos: [
+      { id: Date.now()+2, text: 'Pain', done: false },
+      { id: Date.now()+3, text: 'Œufs', done: true },
+      { id: Date.now()+4, text: 'Café', done: false },
+      { id: Date.now()+4.1, text: 'Légumes', done: true }
+    ]
+  });
+  todoLists.unshift({
+    id: Date.now()+4.5, folderId: demoFolderId2, title: 'Refonte site perso',
+    todos: [
+      { id: Date.now()+4.6, text: 'Choisir un template', done: true },
+      { id: Date.now()+4.7, text: 'Rédiger la page À propos', done: false },
+      { id: Date.now()+4.8, text: 'Déployer sur GitHub Pages', done: false }
+    ]
+  });
+  notes.unshift({ id: Date.now()+5, folderId: demoFolderId, title: 'Idées vacances', content: 'Regarder les vols pour septembre\n- Corse\n- Portugal', planTaskId: null });
+  notes.unshift({ id: Date.now()+5.5, folderId: demoFolderId2, title: 'Idées articles blog', content: '- Retour d\'expérience GitHub Pages\n- Comparatif frameworks JS', planTaskId: null });
+
+  // ── Habitudes + historique sur 30 jours ──
+  const hId1 = Date.now()+6, hId2 = Date.now()+7, hId3 = Date.now()+7.5;
+  habits.push({ id: hId1, name: 'Boire 2L d\'eau', targetDays: [1,2,3,4,5,6,0], createdAt: dateStr(30) });
+  habits.push({ id: hId2, name: 'Lire 20 min', targetDays: [1,2,3,4,5], createdAt: dateStr(30) });
+  habits.push({ id: hId3, name: 'Méditer', targetDays: [1,3,5], createdAt: dateStr(20) });
+  for(let i=0; i<30; i++) {
+    const dStr = dateStr(i);
+    const dow = new Date(dStr).getDay();
+    if(!habitHistory[dStr]) habitHistory[dStr] = [];
+    if(Math.random() < 0.75) habitHistory[dStr].push(hId1);
+    if([1,2,3,4,5].includes(dow) && Math.random() < 0.6) habitHistory[dStr].push(hId2);
+    if([1,3,5].includes(dow) && Math.random() < 0.7) habitHistory[dStr].push(hId3);
+  }
+
+  // ── Repas sur 30 jours ──
+  const demoMeals = [
+    { name: 'Salade César', cal: 450 }, { name: 'Pâtes bolognaise', cal: 650 },
+    { name: 'Poulet riz légumes', cal: 550 }, { name: 'Omelette', cal: 350 },
+    { name: 'Burger maison', cal: 700 }, { name: 'Poke bowl', cal: 480 }
+  ];
+  demoMeals.forEach((m, idx) => { if(!mealLibrary.find(x => x.name === m.name)) mealLibrary.push({ id: Date.now()+20+idx, name: m.name, cal: m.cal }); });
+  for(let i=0; i<30; i++) {
+    const dStr = dateStr(i);
+    if(!mealLog[dStr]) mealLog[dStr] = [];
+    if(mealLog[dStr].length > 0) continue;
+    const nBMeals = 2 + Math.floor(Math.random()*2);
+    const times = ['08:00','12:30','19:30','16:00'];
+    for(let m=0; m<nBMeals; m++) {
+      const meal = demoMeals[Math.floor(Math.random()*demoMeals.length)];
+      mealLog[dStr].push({ id: Date.now()+30+i*10+m, time: times[m]||'20:00', name: meal.name, cal: meal.cal });
+    }
+    mealLog[dStr].sort((a,b) => a.time.localeCompare(b.time));
+  }
+
+  // ── Objectifs ──
+  objectives.push({ id: Date.now()+11, text: 'Faire du sport 3x cette semaine', done: false, subtasks: [], description: '' });
+  objectives.push({ id: Date.now()+11.5, text: 'Lire 2 livres ce mois-ci', done: false, subtasks: [ {id:1, text:'Livre 1 terminé', done:true}, {id:2, text:'Livre 2 terminé', done:false} ], description: '' });
+
+  // ── Musculation sur le mois, avec progression pour voir le graphique/PR ──
+  const exercices = ['Développé couché', 'Squat', 'Traction'];
+  let baseWeights = { 'Développé couché': 50, 'Squat': 60, 'Traction': 0 };
+  for(let i=30; i>=0; i-=2) {
+    const dStr = dateStr(i);
+    if(!workouts[dStr]) workouts[dStr] = [];
+    const exo = exercices[Math.floor(Math.random()*exercices.length)];
+    baseWeights[exo] += Math.random() < 0.4 ? (exo==='Traction'?0:2.5) : 0;
+    workouts[dStr].push({
+      id: Date.now()+40+i,
+      exo, sets: String(3+Math.floor(Math.random()*2)),
+      reps: String(6+Math.floor(Math.random()*6)),
+      weight: exo==='Traction' ? String(Math.floor(Math.random()*5)) : String(baseWeights[exo])
+    });
+  }
+
+  // ── Journal + tâches planifiées sur le mois ──
+  const journalNotes = ["Bonne journée, RAS.", "Un peu fatigué aujourd'hui.", "Journée productive !", "Rien de spécial à noter.", "Belle avancée sur mes projets."];
+  const plannedTasks = [
+    { name: 'Appeler le dentiste', label: 'Santé', start: '09:00', end: '09:30' },
+    { name: 'Réunion équipe', label: 'Travail', start: '14:00', end: '15:00' },
+    { name: 'Séance de sport', label: 'Sport', start: '18:00', end: '19:00' },
+    { name: 'Courses', label: 'Perso', start: '11:00', end: '11:30' }
+  ];
+  for(let i=0; i<30; i++) {
+    const dStr = dateStr(i);
+    if(!dailyJournal[dStr]) dailyJournal[dStr] = { tasks: [], note: '' };
+    if(!dailyJournal[dStr].note) dailyJournal[dStr].note = journalNotes[Math.floor(Math.random()*journalNotes.length)];
+    if(Math.random() < 0.5) {
+      const t = plannedTasks[Math.floor(Math.random()*plannedTasks.length)];
+      planTasks.push({ id: Date.now()+50+i, date: dStr, name: t.name, startTime: t.start, endTime: t.end, done: i>0, completedAt: null, label: t.label });
+    }
+  }
+  planTasks.push({ id: Date.now()+99, date: todayStr, name: 'Appeler le dentiste', startTime: '09:00', endTime: '09:30', done: false, completedAt: null, label: 'Santé' });
+  planTasks.push({ id: Date.now()+100, date: todayStr, name: 'Réunion équipe', startTime: '14:00', endTime: '15:00', done: false, completedAt: null, label: 'Travail' });
+
+  saveData();
+  showToast('✓ ~1 mois de données de démo ajoutées');
+  switchTab(_activeTab || 'myday');
 }
 
 function exportData() {
