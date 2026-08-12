@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Planning V3.6 - Repas</title>
+<title>Mon Planning V3.13 - Repas</title>
 <style>
 .ti { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; font-style: normal; vertical-align: -0.125em; }
 .ti svg { width: 100%; height: 100%; display: block; }
@@ -92,6 +92,7 @@ body { font-family: var(--font); background: var(--bg-tertiary); color: var(--te
   flex-shrink: 0;
 }
 .subtabs-bar-group.visible { display: flex; }
+#subtabs-myday { min-height: 28px; min-width: 1px; }
 
 /* ── LAYOUT PRINCIPAL ── */
 .app-body {
@@ -201,6 +202,8 @@ button.icon-only.danger:hover { color: var(--red); background: var(--red-bg); }
 .sidebar-folder:hover .sidebar-folder-actions { opacity: 1; }
 .sidebar-folder-actions i { font-size: 13px; color: var(--text-tertiary); cursor: pointer; padding: 2px; border-radius: 4px; }
 .sidebar-folder-actions i:hover { color: var(--red); }
+.sidebar-folder.active { background: var(--blue-bg); color: var(--blue); }
+.sidebar-folder.drag-over { outline: 2px dashed var(--orange); outline-offset: -2px; }
 
 /* ── SIDEBAR DROITE ── */
 .sidebar-right {
@@ -472,11 +475,23 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
   .topbar-right button i { font-size: 17px; }
   .topbar-right button.icon-only { padding: 7px; }
 
-  /* Sidebars gauche/droite entièrement supprimées sur mobile */
-  .sidebar, .sidebar-right { display: none !important; }
+  /* Sidebars empilées au lieu de colonnes fixes : on garde tout leur contenu
+     (sélecteur de listes, widget habitudes/repas, résumé du jour) mais en
+     pleine largeur, dans le flux normal de la page, au lieu de les cacher */
+  .app-body { flex-direction: column; }
+  .sidebar, .sidebar-right {
+    position: static;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border: none;
+    border-top: 1px solid var(--border);
+    padding: 14px;
+  }
 
   /* Le contenu principal prend toute la largeur */
-  .main-content { padding: 14px; }
+  .main-content { padding: 14px; width: 100%; }
 
   /* Colonnes internes (journal, habitudes) : on empile au lieu de mettre côte à côte */
   #subpanel-plan-journal > div,
@@ -512,7 +527,7 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
   </div>
   <div class="app-title">
     <i class="ti ti-layout-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></i>
-    Mon Planning V3.6
+    Mon Planning V3.13
   </div>
   <div class="topbar-right">
     <div class="date-badge" id="date-badge"></div>
@@ -526,6 +541,7 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 </div>
 
 <div class="subtabs-bar" id="subtabs-bar">
+  <div class="subtabs-bar-group" id="subtabs-myday"></div>
   <div class="subtabs-bar-group" id="subtabs-planning">
     <div class="plan-sub-tab active" id="pst-view" onclick="switchPlanSub('view')">Aujourd'hui</div>
     <div class="plan-sub-tab" id="pst-2days" onclick="switchPlanSub('2days')">Vue 2 jours</div>
@@ -535,7 +551,6 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
   </div>
   <div class="subtabs-bar-group" id="subtabs-library">
     <div class="plan-sub-tab active" id="libbtn-todos" onclick="switchLibSub('todos')">Tâches</div>
-    <div class="plan-sub-tab" id="libbtn-notes" onclick="switchLibSub('notes')">Notes</div>
     <div class="plan-sub-tab" id="libbtn-habits" onclick="switchLibSub('habits')">Habitudes</div>
     <div class="plan-sub-tab" id="libbtn-meals" onclick="switchLibSub('meals')">Repas</div>
     <div class="plan-sub-tab" id="libbtn-workout" onclick="switchLibSub('workout')">Muscu</div>
@@ -644,6 +659,16 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
         </div>
         <div id="planning-stats-container"></div>
         <div id="timeline-container"></div>
+        <div class="myday-linked-lists" id="plan-view-linked-lists-section">
+          <div class="myday-linked-lists-header">
+            <div class="myday-linked-lists-title">Listes épinglées</div>
+            <button onclick="openPinListModal()" style="padding:4px 10px;font-size:12px;border-radius:8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block;vertical-align:-2px;"><path d="M12 5v14M5 12h14"/></svg>
+              Épingler une liste
+            </button>
+          </div>
+          <div id="plan-view-linked-lists-container"></div>
+        </div>
       </div>
 
       <!-- SOUS-PANEL : VUE 2 JOURS -->
@@ -678,6 +703,16 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
           </div>
         </div>
         <div id="plan-2days-container" style="overflow-x:auto;"></div>
+        <div class="myday-linked-lists" id="plan-2days-linked-lists-section">
+          <div class="myday-linked-lists-header">
+            <div class="myday-linked-lists-title">Listes épinglées</div>
+            <button onclick="openPinListModal()" style="padding:4px 10px;font-size:12px;border-radius:8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block;vertical-align:-2px;"><path d="M12 5v14M5 12h14"/></svg>
+              Épingler une liste
+            </button>
+          </div>
+          <div id="plan-2days-linked-lists-container"></div>
+        </div>
       </div>
 
       <!-- SOUS-PANEL : VUE SEMAINE -->
@@ -692,6 +727,16 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
           </button>
         </div>
         <div id="plan-week-container" style="overflow-x:auto;"></div>
+        <div class="myday-linked-lists" id="plan-week-linked-lists-section">
+          <div class="myday-linked-lists-header">
+            <div class="myday-linked-lists-title">Listes épinglées</div>
+            <button onclick="openPinListModal()" style="padding:4px 10px;font-size:12px;border-radius:8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block;vertical-align:-2px;"><path d="M12 5v14M5 12h14"/></svg>
+              Épingler une liste
+            </button>
+          </div>
+          <div id="plan-week-linked-lists-container"></div>
+        </div>
       </div>
 
       <!-- SOUS-PANEL : JOURNAL -->
@@ -717,6 +762,16 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
           </button>
         </div>
         <div id="year-view-container" class="year-grid"></div>
+        <div class="myday-linked-lists" id="plan-year-linked-lists-section">
+          <div class="myday-linked-lists-header">
+            <div class="myday-linked-lists-title">Listes épinglées</div>
+            <button onclick="openPinListModal()" style="padding:4px 10px;font-size:12px;border-radius:8px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13" style="display:inline-block;vertical-align:-2px;"><path d="M12 5v14M5 12h14"/></svg>
+              Épingler une liste
+            </button>
+          </div>
+          <div id="plan-year-linked-lists-container"></div>
+        </div>
       </div>
     </div>
 
@@ -725,36 +780,21 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
         <div class="section-header">
           <div class="section-title">
             <i class="ti ti-checklist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></i>
-            <span id="todos-editor-title">Tâches</span>
+            <span id="todos-editor-title">Tâches &amp; Notes</span>
           </div>
           <div style="display:flex;gap:8px;">
             <button class="primary" onclick="addTodoList()">
               <i class="ti ti-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></i> Nouvelle liste
             </button>
-            <button class="danger" id="del-todo-list-btn" onclick="deleteTodoList()" style="display:none">
-              <i class="ti ti-trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg></i> Supprimer
-            </button>
-          </div>
-        </div>
-        <div class="editor-wrap" id="todos-editor"><div class="editor-empty">Sélectionnez ou créez une liste dans la sidebar.</div></div>
-      </div>
-
-      <div id="subpanel-lib-notes" style="display:none;">
-        <div class="section-header">
-          <div class="section-title">
-            <i class="ti ti-notes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h12"/></svg></i>
-            <span id="notes-editor-title">Notes</span>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="primary" onclick="addNote()">
+            <button class="blue" onclick="addNote()">
               <i class="ti ti-plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></i> Nouvelle note
             </button>
-            <button class="danger" id="del-note-btn" onclick="deleteNote()" style="display:none">
+            <button class="danger" id="del-todo-list-btn" onclick="deleteActiveLibItem()" style="display:none">
               <i class="ti ti-trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg></i> Supprimer
             </button>
           </div>
         </div>
-        <div class="editor-wrap" id="notes-editor"><div class="editor-empty">Sélectionnez ou créez une note dans la sidebar.</div></div>
+        <div class="editor-wrap" id="todos-editor"><div class="editor-empty">Sélectionnez ou créez une liste/note dans la sidebar.</div></div>
       </div>
 
       <div id="subpanel-lib-habits" style="display:none;">
@@ -1220,7 +1260,7 @@ function switchTab(tab) {
 
 function updateSubtabsBar() {
   const bar = document.getElementById('subtabs-bar');
-  const groups = { planning: 'subtabs-planning', library: 'subtabs-library' };
+  const groups = { myday: 'subtabs-myday', planning: 'subtabs-planning', library: 'subtabs-library' };
   const hasBar = !!groups[_activeTab];
   bar.classList.toggle('visible', hasBar);
   Object.keys(groups).forEach(t => {
@@ -1253,7 +1293,8 @@ function updateSidebar() {
     sb.classList.add('visible'); renderMyDaySidebar();
     sbr.classList.add('visible'); renderMyDayRightSidebar();
   } else if(_activeTab === 'planning') {
-    // pas de sidebar pour le planning
+    sb.classList.add('visible'); renderMyDaySidebar();
+    sbr.classList.add('visible'); renderMyDayRightSidebar();
   } else if(_activeTab === 'library') {
     if(_activeLibSub !== 'habits') {
       sb.classList.add('visible');
@@ -1666,9 +1707,9 @@ function renderMyDayRightSidebar() {
   renderSrLibBlock();
 }
 
-if(!window._srExpandedFolders) window._srExpandedFolders = { lists: new Set(), notes: new Set() };
+if(!window._srExpandedFolders) window._srExpandedFolders = { combined: new Set() };
 function toggleSrFolder(folderId) {
-  const set = window._srExpandedFolders[_srLibTab];
+  const set = window._srExpandedFolders.combined;
   if(set.has(folderId)) set.delete(folderId); else set.add(folderId);
   renderSrLibBlock();
 }
@@ -1676,49 +1717,48 @@ function toggleSrFolder(folderId) {
 function renderSrLibBlock() {
   const block = document.getElementById('sr-lib-block');
   if(!block) return;
-  const isLists = _srLibTab === 'lists';
-  const expanded = window._srExpandedFolders[_srLibTab];
+  const expanded = window._srExpandedFolders.combined;
 
   let html = `<div class="sr-block-title">Bibliothèque</div>
-  <div class="sr-tabs">
-    <div class="sr-tab ${isLists?'active':''}" onclick="_srLibTab='lists';renderSrLibBlock()">Tâches</div>
-    <div class="sr-tab ${!isLists?'active':''}" onclick="_srLibTab='notes';renderSrLibBlock()">Notes</div>
-  </div>
   <div id="sr-lib-content" style="overflow-y:auto;max-height:calc(100vh - 200px);">`;
 
-  const folders = isLists ? todoFolders : noteFolders;
-  const items   = isLists ? todoLists   : notes;
+  const folders = getCombinedLibFolders();
 
   if(folders.length === 0) {
     html += `<div style="font-size:12px;color:var(--text-tertiary);padding:8px 4px;font-style:italic;">Vide.</div>`;
   } else {
     folders.forEach(folder => {
-      const folderItems = items.filter(i => i.folderId === folder.id);
-      const isOpen = expanded.has(folder.id);
-      const chevron = isOpen ? '▼' : '▶';
+      const folderLists = todoLists.filter(l => l.folderId === folder.id);
+      const folderNotesArr = notes.filter(n => n.folderId === folder.id);
+      const isDefault = folder.id === 'default';
+      const isOpen = isDefault ? true : expanded.has(folder.id);
 
-      html += `<div onclick="toggleSrFolder('${folder.id}')" style="display:flex;align-items:center;gap:5px;padding:6px;cursor:pointer;">
-        <span style="font-size:11px;font-weight:700;color:var(--text-secondary);flex:1;">${escHtml(folder.name)}</span>
-        <span style="font-size:10px;color:var(--text-tertiary);">${chevron} ${folderItems.length}</span>
-      </div>`;
+      if(!isDefault) {
+        const chevron = isOpen ? '▼' : '▶';
+        html += `<div onclick="toggleSrFolder('${folder.id}')" style="display:flex;align-items:center;gap:5px;padding:6px;cursor:pointer;">
+          <span style="font-size:11px;font-weight:700;color:var(--text-secondary);flex:1;">${escHtml(folder.name)}</span>
+          <span style="font-size:10px;color:var(--text-tertiary);">${chevron} ${folderLists.length + folderNotesArr.length}</span>
+        </div>`;
+      }
 
       if(isOpen) {
-        folderItems.forEach(l => {
-          if(isLists) {
-            const done = l.todos.filter(t=>t.done).length;
-            const isPinned = isTodoListPinned(l.id);
-            html += `<div class="sr-quick-item" style="padding-left:14px;" onclick="srOpenList(${l.id})">
-              <span class="sr-quick-item-label">${escHtml(l.title)}</span>
-              <span class="sr-quick-item-badge">${done}/${l.todos.length}</span>
-              <button onclick="event.stopPropagation();togglePinList(${l.id})" style="padding:2px 4px;font-size:10px;">
-                ${isPinned?'★':'☆'}
-              </button>
-            </div>`;
-          } else {
-            html += `<div class="sr-quick-item" style="padding-left:14px;" onclick="srOpenNote(${l.id})">
-              <span class="sr-quick-item-label">${escHtml(l.title||'Sans titre')}</span>
-            </div>`;
-          }
+        folderLists.forEach(l => {
+          const done = l.todos.filter(t=>t.done).length;
+          const isPinned = isTodoListPinned(l.id);
+          html += `<div class="sr-quick-item" style="padding-left:14px;" onclick="srOpenList(${l.id})">
+            <i class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></i>
+            <span class="sr-quick-item-label">${escHtml(l.title)}</span>
+            <span class="sr-quick-item-badge">${done}/${l.todos.length}</span>
+            <button onclick="event.stopPropagation();togglePinList(${l.id})" style="padding:2px 4px;font-size:10px;">
+              ${isPinned?'★':'☆'}
+            </button>
+          </div>`;
+        });
+        folderNotesArr.forEach(n => {
+          html += `<div class="sr-quick-item" style="padding-left:14px;" onclick="srOpenNote(${n.id})">
+            <i class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6h16M4 12h16M4 18h12"/></svg></i>
+            <span class="sr-quick-item-label">${escHtml(n.title||'Sans titre')}</span>
+          </div>`;
         });
       }
     });
@@ -1728,16 +1768,16 @@ function renderSrLibBlock() {
 }
 
 function srOpenList(id) {
-  activeTodoId = id;
+  activeTodoId = id; activeNoteId = null; activeLibItemType = 'list';
   const l = todoLists.find(x=>x.id===id);
-  if(l) activeTodoFolderId = l.folderId;
+  if(l) { activeTodoFolderId = l.folderId; window._libExpandedFolders.todos.add(l.folderId); }
   switchTab('library'); switchLibSub('todos');
 }
 function srOpenNote(id) {
-  activeNoteId = id;
+  activeNoteId = id; activeTodoId = null; activeLibItemType = 'note';
   const n = notes.find(x=>x.id===id);
-  if(n) activeNoteFolderId = n.folderId;
-  switchTab('library'); switchLibSub('notes');
+  if(n) { activeTodoFolderId = n.folderId; window._libExpandedFolders.todos.add(n.folderId); }
+  switchTab('library'); switchLibSub('todos');
 }
 
 function handleMyDayCategoryChange(selectEl) {
@@ -2064,10 +2104,12 @@ let activeTodoFolderId = todoFolders[0]?.id || 'default';
 let activeTodoId = null;
 let activeNoteFolderId = noteFolders[0]?.id || 'default';
 let activeNoteId = null;
+let activeLibItemType = 'list'; // 'list' ou 'note' — quel type d'élément est affiché dans le panneau Tâches & Notes
 
 function switchLibSub(sub) {
+  if(sub === 'notes') sub = 'todos'; // compat : l'onglet notes a été fusionné avec tâches
   _activeLibSub = sub;
-  ['todos','notes','habits','meals','workout'].forEach(s => {
+  ['todos','habits','meals','workout'].forEach(s => {
     const el = document.getElementById('subpanel-lib-'+s);
     if(el) el.style.display = s===sub ? '' : 'none';
     const btn = document.getElementById('libbtn-'+s);
@@ -2075,7 +2117,6 @@ function switchLibSub(sub) {
   });
   updateSidebar();
   if(sub==='todos') renderTodosEditor();
-  if(sub==='notes') renderNotesEditor();
   if(sub==='habits') renderHabits();
   if(sub==='meals') renderMealLog();
   if(sub==='workout') renderWorkoutPanel();
@@ -2116,8 +2157,7 @@ function renderLibrarySidebar() {
   if(_activeLibSub === 'habits') return;
   if(_activeLibSub === 'workout') return;
   if(_activeLibSub === 'meals') { renderMealLibrarySidebar(sb); return; }
-  if(_activeLibSub === 'todos') renderTodoSidebar(sb);
-  else renderNoteSidebar(sb);
+  renderTodoSidebar(sb);
 }
 
 if(!window._libExpandedFolders) window._libExpandedFolders = { todos: new Set(), notes: new Set() };
@@ -2125,6 +2165,13 @@ function toggleLibFolder(type, folderId) {
   const set = window._libExpandedFolders[type];
   if(set.has(folderId)) set.delete(folderId); else set.add(folderId);
   renderLibrarySidebar();
+}
+
+// Dossiers combinés (tâches + notes fusionnées), dédupliqués par id
+function getCombinedLibFolders() {
+  const combined = [...todoFolders];
+  noteFolders.forEach(nf => { if(!combined.some(f=>f.id===nf.id)) combined.push(nf); });
+  return combined;
 }
 
 function renderTodoSidebar(sb) {
@@ -2137,14 +2184,17 @@ function renderTodoSidebar(sb) {
   addFolderBtnTop.onclick = () => addTodoFolder(sb);
   sb.appendChild(addFolderBtnTop);
 
-  todoFolders.forEach(folder => {
+  getCombinedLibFolders().forEach(folder => {
     const folderLists = todoLists.filter(l => l.folderId === folder.id);
-    const isOpen = expanded.has(folder.id);
+    const folderNotesArr = notes.filter(n => n.folderId === folder.id);
+    const isDefault = folder.id === 'default';
+    const isOpen = isDefault ? true : expanded.has(folder.id);
 
+    if(!isDefault) {
     const folderEl = document.createElement('div');
-    folderEl.className = 'sidebar-folder';
+    folderEl.className = 'sidebar-folder' + (folder.id===activeTodoFolderId ? ' active' : '');
     const folderLabel = document.createElement('span');
-    folderLabel.textContent = `${folder.name} (${folderLists.length})`;
+    folderLabel.textContent = `${folder.name} (${folderLists.length + folderNotesArr.length})`;
     const folderActions = document.createElement('div');
     folderActions.className = 'sidebar-folder-actions';
     const folderRenameBtn = document.createElement('button');
@@ -2154,25 +2204,71 @@ function renderTodoSidebar(sb) {
     folderRenameBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
     folderRenameBtn.onclick = (e) => { e.stopPropagation(); startRenameSidebarItem(folderEl, folder.name, (newName)=>{ folder.name=newName; saveData(); renderTodoSidebar(sb); }); };
     folderActions.appendChild(folderRenameBtn);
-    if(folder.id !== 'default') {
-      const folderDelBtn = document.createElement('button');
-      folderDelBtn.className = 'icon-only';
-      folderDelBtn.title = 'Supprimer le dossier';
-      folderDelBtn.style.cssText = 'padding:3px;font-size:12px;';
-      folderDelBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>';
-      folderDelBtn.onclick = (e) => { e.stopPropagation(); deleteTodoFolder(folder.id, sb); };
-      folderActions.appendChild(folderDelBtn);
-    }
+    const folderDelBtn = document.createElement('button');
+    folderDelBtn.className = 'icon-only';
+    folderDelBtn.title = 'Supprimer le dossier';
+    folderDelBtn.style.cssText = 'padding:3px;font-size:12px;';
+    folderDelBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>';
+    folderDelBtn.onclick = (e) => { e.stopPropagation(); deleteTodoFolder(folder.id, sb); };
+    folderActions.appendChild(folderDelBtn);
     folderEl.append(folderLabel, folderActions);
-    folderEl.onclick = () => toggleLibFolder('todos', folder.id);
+    folderEl.onclick = () => { activeTodoFolderId = folder.id; toggleLibFolder('todos', folder.id); };
+    folderEl.draggable = true;
+    folderEl.dataset.folderId = folder.id;
+    folderEl.addEventListener('dragstart', (e) => {
+      window._draggedFolderId = folder.id;
+      e.stopPropagation();
+      e.dataTransfer.effectAllowed = 'move';
+      setTimeout(() => folderEl.classList.add('dragging'), 0);
+    });
+    folderEl.addEventListener('dragend', () => { folderEl.classList.remove('dragging'); window._draggedFolderId = null; });
+    folderEl.addEventListener('dragover', (e) => {
+      if(window._draggedFolderId == null && window._draggedTodoListId == null && window._draggedNoteId == null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      folderEl.classList.add('drag-over');
+    });
+    folderEl.addEventListener('dragleave', () => { folderEl.classList.remove('drag-over'); });
+    folderEl.addEventListener('drop', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      folderEl.classList.remove('drag-over');
+      if(window._draggedFolderId != null) {
+        const draggedId = window._draggedFolderId;
+        window._draggedFolderId = null;
+        if(draggedId === folder.id) return;
+        const draggedIdx = todoFolders.findIndex(x=>x.id===draggedId);
+        const targetIdx = todoFolders.findIndex(x=>x.id===folder.id);
+        if(draggedIdx === -1 || targetIdx === -1) return;
+        const [draggedItem] = todoFolders.splice(draggedIdx, 1);
+        const newTargetIdx = todoFolders.findIndex(x=>x.id===folder.id);
+        todoFolders.splice(newTargetIdx, 0, draggedItem);
+        saveData();
+        renderTodoSidebar(sb);
+      } else if(window._draggedTodoListId != null) {
+        const draggedId = window._draggedTodoListId;
+        window._draggedTodoListId = null;
+        const l = todoLists.find(x=>x.id===draggedId);
+        if(l) { l.folderId = folder.id; saveData(); renderTodoSidebar(sb); }
+      } else if(window._draggedNoteId != null) {
+        const draggedId = window._draggedNoteId;
+        window._draggedNoteId = null;
+        const n = notes.find(x=>x.id===draggedId);
+        if(n) { n.folderId = folder.id; saveData(); renderTodoSidebar(sb); }
+      }
+    });
     sb.appendChild(folderEl);
+    }
 
     if(isOpen) {
       folderLists.forEach(l => {
         const item = document.createElement('div');
-        item.className = 'sidebar-item' + (l.id===activeTodoId ? ' active' : '');
+        item.className = 'sidebar-item' + (l.id===activeTodoId && activeLibItemType==='list' ? ' active' : '');
         item.draggable = true;
         item.dataset.listId = l.id;
+        const iconSpan = document.createElement('span');
+        iconSpan.style.cssText = 'flex-shrink:0;display:inline-flex;opacity:.6;';
+        iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>';
         const labelSpan = document.createElement('span');
         labelSpan.className = 'sidebar-item-label';
         labelSpan.textContent = l.title;
@@ -2182,8 +2278,8 @@ function renderTodoSidebar(sb) {
         renameBtn.style.cssText = 'padding:4px;font-size:13px;flex-shrink:0;';
         renameBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
         renameBtn.onclick = (e) => { e.stopPropagation(); startRenameSidebarItem(item, l.title, (newTitle)=>{ l.title=newTitle; saveData(); renderTodoSidebar(sb); renderTodosEditor(); }); };
-        item.append(labelSpan, renameBtn);
-        item.onclick = () => { activeTodoFolderId = folder.id; activeTodoId = l.id; renderTodoSidebar(sb); renderTodosEditor(); };
+        item.append(iconSpan, labelSpan, renameBtn);
+        item.onclick = () => { activeTodoFolderId = folder.id; activeTodoId = l.id; activeNoteId = null; activeLibItemType = 'list'; renderTodoSidebar(sb); renderTodosEditor(); };
         item.addEventListener('dragstart', (e) => {
           window._draggedTodoListId = l.id;
           e.dataTransfer.effectAllowed = 'move';
@@ -2213,6 +2309,55 @@ function renderTodoSidebar(sb) {
         });
         sb.appendChild(item);
       });
+      folderNotesArr.forEach(n => {
+        const item = document.createElement('div');
+        item.className = 'sidebar-item' + (n.id===activeNoteId && activeLibItemType==='note' ? ' active' : '');
+        const iconSpan = document.createElement('span');
+        iconSpan.style.cssText = 'flex-shrink:0;display:inline-flex;opacity:.6;';
+        iconSpan.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6h16M4 12h16M4 18h12"/></svg>';
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'sidebar-item-label';
+        labelSpan.textContent = n.title || 'Sans titre';
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'icon-only';
+        renameBtn.title = 'Renommer';
+        renameBtn.style.cssText = 'padding:4px;font-size:13px;flex-shrink:0;';
+        renameBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+        renameBtn.onclick = (e) => { e.stopPropagation(); startRenameSidebarItem(item, n.title||'Sans titre', (newTitle)=>{ n.title=newTitle; saveData(); renderTodoSidebar(sb); renderTodosEditor(); }); };
+        item.append(iconSpan, labelSpan, renameBtn);
+        item.onclick = () => { activeTodoFolderId = folder.id; activeNoteId = n.id; activeTodoId = null; activeLibItemType = 'note'; renderTodoSidebar(sb); renderTodosEditor(); };
+        item.draggable = true;
+        item.dataset.noteId = n.id;
+        item.addEventListener('dragstart', (e) => {
+          window._draggedNoteId = n.id;
+          e.dataTransfer.effectAllowed = 'move';
+          setTimeout(() => item.classList.add('dragging'), 0);
+        });
+        item.addEventListener('dragend', () => { item.classList.remove('dragging'); });
+        item.addEventListener('dragover', (e) => {
+          if(window._draggedNoteId == null) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          item.classList.add('drag-over');
+        });
+        item.addEventListener('dragleave', () => { item.classList.remove('drag-over'); });
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('drag-over');
+          const draggedId = window._draggedNoteId;
+          window._draggedNoteId = null;
+          if(draggedId == null || draggedId === n.id) return;
+          const draggedIdx = notes.findIndex(x=>x.id===draggedId);
+          if(draggedIdx === -1) return;
+          const [draggedItem] = notes.splice(draggedIdx, 1);
+          draggedItem.folderId = folder.id;
+          const targetIdx = notes.findIndex(x=>x.id===n.id);
+          notes.splice(targetIdx, 0, draggedItem);
+          saveData();
+          renderTodoSidebar(sb);
+        });
+        sb.appendChild(item);
+      });
     }
   });
 }
@@ -2228,99 +2373,24 @@ function addTodoFolder(sb) {
 }
 function deleteTodoFolder(folderId, sb) {
   const hasLists = todoLists.some(l=>l.folderId===folderId);
-  if(hasLists && !confirm('Ce dossier contient des listes. Les déplacer vers "Général" et supprimer le dossier ?')) return;
+  const hasNotes = notes.some(n=>n.folderId===folderId);
+  if((hasLists || hasNotes) && !confirm('Ce dossier contient des listes/notes. Les déplacer vers "Général" et supprimer le dossier ?')) return;
   todoLists.forEach(l=>{ if(l.folderId===folderId) l.folderId='default'; });
+  notes.forEach(n=>{ if(n.folderId===folderId) n.folderId='default'; });
   todoFolders = todoFolders.filter(f=>f.id!==folderId);
+  noteFolders = noteFolders.filter(f=>f.id!==folderId);
   window._libExpandedFolders.todos.delete(folderId);
   saveData();
   renderTodoSidebar(sb);
 }
-
-function renderNoteSidebar(sb) {
-  sb.innerHTML = '';
-  const expanded = window._libExpandedFolders.notes;
-
-  const addFolderBtnTop = document.createElement('button');
-  addFolderBtnTop.className = 'sidebar-add-btn';
-  addFolderBtnTop.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M12 5v14M5 12h14"/></svg> Nouveau dossier';
-  addFolderBtnTop.onclick = () => addNoteFolder(sb);
-  sb.appendChild(addFolderBtnTop);
-
-  noteFolders.forEach(folder => {
-    const folderNotes = notes.filter(n => n.folderId === folder.id);
-    const isOpen = expanded.has(folder.id);
-
-    const folderEl = document.createElement('div');
-    folderEl.className = 'sidebar-folder';
-    const folderLabel = document.createElement('span');
-    folderLabel.textContent = `${folder.name} (${folderNotes.length})`;
-    const folderActions = document.createElement('div');
-    folderActions.className = 'sidebar-folder-actions';
-    const folderRenameBtn = document.createElement('button');
-    folderRenameBtn.className = 'icon-only';
-    folderRenameBtn.title = 'Renommer le dossier';
-    folderRenameBtn.style.cssText = 'padding:3px;font-size:12px;';
-    folderRenameBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-    folderRenameBtn.onclick = (e) => { e.stopPropagation(); startRenameSidebarItem(folderEl, folder.name, (newName)=>{ folder.name=newName; saveData(); renderNoteSidebar(sb); }); };
-    folderActions.appendChild(folderRenameBtn);
-    if(folder.id !== 'default') {
-      const folderDelBtn = document.createElement('button');
-      folderDelBtn.className = 'icon-only';
-      folderDelBtn.title = 'Supprimer le dossier';
-      folderDelBtn.style.cssText = 'padding:3px;font-size:12px;';
-      folderDelBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>';
-      folderDelBtn.onclick = (e) => { e.stopPropagation(); deleteNoteFolder(folder.id, sb); };
-      folderActions.appendChild(folderDelBtn);
-    }
-    folderEl.append(folderLabel, folderActions);
-    folderEl.onclick = () => toggleLibFolder('notes', folder.id);
-    sb.appendChild(folderEl);
-
-    if(isOpen) {
-      folderNotes.forEach(n => {
-        const item = document.createElement('div');
-        item.className = 'sidebar-item' + (n.id===activeNoteId ? ' active' : '');
-        const labelSpan = document.createElement('span');
-        labelSpan.className = 'sidebar-item-label';
-        labelSpan.textContent = n.title || 'Sans titre';
-        const renameBtn = document.createElement('button');
-        renameBtn.className = 'icon-only';
-        renameBtn.title = 'Renommer';
-        renameBtn.style.cssText = 'padding:4px;font-size:13px;flex-shrink:0;';
-        renameBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-        renameBtn.onclick = (e) => { e.stopPropagation(); startRenameSidebarItem(item, n.title||'Sans titre', (newTitle)=>{ n.title=newTitle; saveData(); renderNoteSidebar(sb); renderNotesEditor(); }); };
-        item.append(labelSpan, renameBtn);
-        item.onclick = () => { activeNoteId = n.id; renderNoteSidebar(sb); renderNotesEditor(); };
-        sb.appendChild(item);
-      });
-    }
-  });
-}
-function addNoteFolder(sb) {
-  const folder = { id: 'f'+Date.now(), name: 'Nouveau dossier' };
-  noteFolders.push(folder);
-  window._libExpandedFolders.notes.add(folder.id);
-  saveData();
-  renderNoteSidebar(sb);
-  const folderEls = sb.querySelectorAll('.sidebar-folder');
-  const lastFolderEl = folderEls[folderEls.length-1];
-  if(lastFolderEl) startRenameSidebarItem(lastFolderEl, folder.name, (newName)=>{ folder.name=newName; saveData(); renderNoteSidebar(sb); });
-}
-function deleteNoteFolder(folderId, sb) {
-  const hasNotes = notes.some(n=>n.folderId===folderId);
-  if(hasNotes && !confirm('Ce dossier contient des notes. Les déplacer vers "Général" et supprimer le dossier ?')) return;
-  notes.forEach(n=>{ if(n.folderId===folderId) n.folderId='default'; });
-  noteFolders = noteFolders.filter(f=>f.id!==folderId);
-  window._libExpandedFolders.notes.delete(folderId);
-  saveData();
-  renderNoteSidebar(sb);
-}
 function renderTodosEditor() {
+  const delBtn = document.getElementById('del-todo-list-btn');
+  if(activeLibItemType === 'note') { renderNoteInEditor(delBtn); return; }
   const ed = document.getElementById('todos-editor');
-  document.getElementById('del-todo-list-btn').style.display = activeTodoId ? 'inline-flex' : 'none';
+  delBtn.style.display = activeTodoId ? 'inline-flex' : 'none';
   const l = todoLists.find(t=>t.id===activeTodoId);
-  if(!l) { ed.innerHTML='<div class="editor-empty">Sélectionnez une liste dans la sidebar.</div>'; return; }
-  const folder = todoFolders.find(f=>f.id===l.folderId);
+  if(!l) { ed.innerHTML='<div class="editor-empty">Sélectionnez ou créez une liste/note dans la sidebar.</div>'; return; }
+  const folder = todoFolders.find(f=>f.id===l.folderId) || noteFolders.find(f=>f.id===l.folderId);
 
   let html = `<div class="dual-title-input" style="display:flex;align-items:center;cursor:default;">${escHtml(folder ? folder.name : '')}</div>`;
   html += `<div class="form-row"><input type="text" id="new-todo-input" placeholder="Ajouter un élément…"/><button class="primary" onclick="addTodoItem()">+</button></div>`;
@@ -2353,15 +2423,24 @@ function renderTodosEditor() {
 
 function addTodoList() {
   const newList = { id: Date.now(), folderId: activeTodoFolderId, title: 'Nouvelle liste', todos: [] };
-  todoLists.unshift(newList); activeTodoId = newList.id; saveData(); renderLibrarySidebar(); renderTodosEditor();
+  todoLists.unshift(newList); activeTodoId = newList.id; activeNoteId = null; activeLibItemType = 'list'; saveData(); renderLibrarySidebar(); renderTodosEditor();
 }
 function deleteTodoList() {
+  const l = todoLists.find(t=>t.id===activeTodoId);
+  if(l) {
+    const linkedIds = l.todos.filter(t=>t.planTaskId).map(t=>t.planTaskId);
+    if(linkedIds.length) planTasks = planTasks.filter(p=>!linkedIds.includes(p.id));
+  }
   todoLists = todoLists.filter(t=>t.id!==activeTodoId); activeTodoId=null; saveData(); renderLibrarySidebar(); renderTodosEditor();
 }
 function addTodoItem() {
   const inp = document.getElementById('new-todo-input'); if(!inp||!inp.value.trim()) return;
   const l = todoLists.find(t=>t.id===activeTodoId); if(!l) return;
-  l.todos.push({ id:Date.now(), text:inp.value.trim(), done:false });
+  const text = inp.value.trim();
+  const todoId = Date.now();
+  const planTaskId = todoId + 1;
+  l.todos.push({ id: todoId, text, done:false, planTaskId });
+  planTasks.push({ id: planTaskId, date: formatDateString(new Date()), name: `Tâche "${text}" ajoutée`, startTime: nowStr(), endTime: null, done:false, completedAt:null, label:'', sourceType:'todo', sourceListId: l.id, sourceItemId: todoId });
   saveData(); renderTodosEditor();
 }
 function toggleTodoItem(id) {
@@ -2370,24 +2449,37 @@ function toggleTodoItem(id) {
   i.done = !i.done;
   if(i.done) { i.completedDate = formatDateString(new Date()); i.completedAt = new Date().toISOString(); }
   else { i.completedDate = null; i.completedAt = null; }
+  if(i.planTaskId) {
+    const pt = planTasks.find(p=>p.id===i.planTaskId);
+    if(pt) {
+      if(i.done) { pt.done=true; pt.completedAt=nowFullStr(); pt._originalEndTime=pt.endTime; pt.endTime=nowStr(); }
+      else { pt.done=false; pt.completedAt=null; pt.endTime=pt._originalEndTime||null; delete pt._originalEndTime; }
+    }
+  }
   saveData(); renderTodosEditor();
 }
 function deleteTodoItem(id) {
   const l = todoLists.find(t=>t.id===activeTodoId); if(!l) return;
+  const item = l.todos.find(x=>x.id===id);
+  if(item && item.planTaskId) planTasks = planTasks.filter(p=>p.id!==item.planTaskId);
   l.todos = l.todos.filter(x=>x.id!==id); saveData(); renderTodosEditor();
 }
 
-// ── NOTES LOGIC ──
-function renderNotesEditor() {
-  const ed = document.getElementById('notes-editor');
-  document.getElementById('del-note-btn').style.display = activeNoteId ? 'inline-flex' : 'none';
+// ── NOTES LOGIC (fusionné dans le même panneau que les tâches) ──
+function renderNoteInEditor(delBtn) {
+  const ed = document.getElementById('todos-editor');
+  delBtn.style.display = activeNoteId ? 'inline-flex' : 'none';
   const n = notes.find(x=>x.id===activeNoteId);
-  if(!n) { ed.innerHTML='<div class="editor-empty">Sélectionnez une note dans la sidebar.</div>'; return; }
+  if(!n) { ed.innerHTML='<div class="editor-empty">Sélectionnez ou créez une liste/note dans la sidebar.</div>'; return; }
   ed.innerHTML = `<input class="dual-title-input" id="note-title-input" placeholder="Titre" value="${escHtml(n.title)}" />
     <textarea class="note-textarea" id="note-content-input" placeholder="Écrire…">${escHtml(n.content)}</textarea>`;
   const titleEl = document.getElementById('note-title-input');
   const contentEl = document.getElementById('note-content-input');
-  const save = () => { n.title=titleEl.value; n.content=contentEl.value; saveData(); renderLibrarySidebar(); };
+  const save = () => {
+    n.title=titleEl.value; n.content=contentEl.value;
+    if(n.planTaskId) { const pt=planTasks.find(p=>p.id===n.planTaskId); if(pt) pt.name = `Note "${n.title || 'Nouvelle note'}" ajoutée`; }
+    saveData(); renderLibrarySidebar();
+  };
   titleEl.addEventListener('blur', save); contentEl.addEventListener('blur', save);
   contentEl.addEventListener('keydown', (e) => handleNoteListKeydown(e, contentEl));
 }
@@ -2419,11 +2511,20 @@ function handleNoteListKeydown(e, textarea) {
   }
 }
 function addNote() {
-  const n = { id:Date.now(), folderId:activeNoteFolderId, title:'Nouvelle note', content:'' };
-  notes.unshift(n); activeNoteId=n.id; saveData(); renderLibrarySidebar(); renderNotesEditor();
+  const noteId = Date.now();
+  const planTaskId = noteId + 1;
+  const n = { id:noteId, folderId:activeTodoFolderId, title:'Nouvelle note', content:'', planTaskId };
+  notes.unshift(n);
+  planTasks.push({ id: planTaskId, date: formatDateString(new Date()), name: `Note "${n.title}" ajoutée`, startTime: nowStr(), endTime: null, done:false, completedAt:null, label:'', sourceType:'note', sourceNoteId: noteId });
+  activeNoteId=n.id; activeTodoId=null; activeLibItemType='note'; saveData(); renderLibrarySidebar(); renderTodosEditor();
 }
 function deleteNote() {
-  notes=notes.filter(n=>n.id!==activeNoteId); activeNoteId=null; saveData(); renderLibrarySidebar(); renderNotesEditor();
+  const n = notes.find(x=>x.id===activeNoteId);
+  if(n && n.planTaskId) planTasks = planTasks.filter(p=>p.id!==n.planTaskId);
+  notes=notes.filter(n=>n.id!==activeNoteId); activeNoteId=null; saveData(); renderLibrarySidebar(); renderTodosEditor();
+}
+function deleteActiveLibItem() {
+  if(activeLibItemType === 'note') deleteNote(); else deleteTodoList();
 }
 
 // ── HABITUDES ──
@@ -3161,8 +3262,8 @@ function openPinListModal() {
   if(avail.length === 0) { showToast("Aucune liste disponible."); return; }
   togglePinList(avail[0].id);
 }
-function renderMyDayLinkedLists() {
-  const container = document.getElementById('myday-linked-lists-container'); if(!container) return;
+function renderLinkedListsInto(containerId) {
+  const container = document.getElementById(containerId); if(!container) return;
   const p = getPinnedLists();
   const pinned = p.map(id => todoLists.find(l=>l.id===id)).filter(Boolean);
   if(pinned.length === 0) { container.innerHTML = ''; return; }
@@ -3174,6 +3275,10 @@ function renderMyDayLinkedLists() {
       </div>
       <div>${l.todos.map(t => `<div style="font-size:13px; padding:4px 0;">${t.done?'✓':'•'} ${escHtml(t.text)}</div>`).join('')}</div>
     </div>`).join('');
+}
+const LINKED_LISTS_CONTAINER_IDS = ['myday-linked-lists-container','plan-view-linked-lists-container','plan-2days-linked-lists-container','plan-week-linked-lists-container','plan-year-linked-lists-container'];
+function renderMyDayLinkedLists() {
+  LINKED_LISTS_CONTAINER_IDS.forEach(renderLinkedListsInto);
 }
 
 // ── PLANNING ──
@@ -3237,9 +3342,32 @@ function togglePlanTask(id) {
   const t = planTasks.find(t=>t.id===id); if(!t) return;
   if(t.done) { t.done=false; t.completedAt=null; t.endTime = t._originalEndTime||null; delete t._originalEndTime; }
   else { t.done=true; t.completedAt=nowFullStr(); t._originalEndTime=t.endTime; t.endTime=nowStr(); showToast('Tâche accomplie !'); }
+  syncSourceItemDone(t);
   saveData(); renderPlanningUI();
 }
+// Répercute l'état "fait/pas fait" d'une tâche planifiée vers l'élément de la Bibliothèque
+// (liste de tâches) dont elle est issue, quand elle a été créée automatiquement depuis celui-ci.
+function syncSourceItemDone(planTask) {
+  if(!planTask || planTask.sourceType !== 'todo') return;
+  const l = todoLists.find(x=>x.id===planTask.sourceListId); if(!l) return;
+  const it = l.todos.find(x=>x.id===planTask.sourceItemId); if(!it) return;
+  it.done = planTask.done;
+  if(it.done) { it.completedDate = formatDateString(new Date()); it.completedAt = new Date().toISOString(); }
+  else { it.completedDate = null; it.completedAt = null; }
+}
 function deletePlanTask(id) {
+  const t = planTasks.find(x=>x.id===id);
+  // Si cette tâche planifiée provient d'un élément de la Bibliothèque, on ne supprime
+  // pas cet élément : on retire juste le lien pour ne pas le recréer par erreur.
+  if(t && t.sourceType === 'todo') {
+    const l = todoLists.find(x=>x.id===t.sourceListId);
+    const it = l && l.todos.find(x=>x.id===t.sourceItemId);
+    if(it) delete it.planTaskId;
+  }
+  if(t && t.sourceType === 'note') {
+    const n = notes.find(x=>x.id===t.sourceNoteId);
+    if(n) delete n.planTaskId;
+  }
   planTasks = planTasks.filter(t=>t.id!==id);
   saveData(); renderPlanningUI(); showToast('Tâche supprimée.');
 }
@@ -3479,9 +3607,19 @@ function renderPlanningUI() {
       const timeLbl=(!t._overflow && t.startTime)?`<span class="tb-time">${t.startTime}${t.endTime?'→'+t.endTime:''}</span>`:'';
       const lbl=getPlanLabel(t.label);
       const labelBadge=lbl.id?`<span style="font-size:9px;font-weight:700;color:${lbl.color};background:${lbl.bg};border-radius:4px;padding:1px 5px;flex-shrink:0;">${lbl.name}</span>`:'';
-      top.innerHTML=`<div class="tb-check ${t.done?'checked':''}"><i class="ti ti-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></i></div><div class="tb-name">${escHtml(t.name)}</div>${labelBadge}${timeLbl}${overflowBadge}${midnightBadge}<button class="icon-only danger" onclick="event.stopPropagation();deletePlanTask(${t.id})" style="flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg></button>`;
-      top.querySelector('.tb-check').onclick=e=>{e.stopPropagation(); togglePlanTask(t.id);};
-      if(!t._overflow) { block.ondblclick=e=>{e.stopPropagation(); editPlanTask(t.id,block);}; block.title='Double-clic pour modifier'; }
+      const isLibRef = t.sourceType==='todo' || t.sourceType==='note';
+      const checkHtml = isLibRef
+        ? `<div class="tb-check" style="cursor:default;opacity:.55;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg></div>`
+        : `<div class="tb-check ${t.done?'checked':''}"><i class="ti ti-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></i></div>`;
+      top.innerHTML=`${checkHtml}<div class="tb-name">${escHtml(t.name)}</div>${labelBadge}${timeLbl}${overflowBadge}${midnightBadge}<button class="icon-only danger" onclick="event.stopPropagation();deletePlanTask(${t.id})" style="flex-shrink:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg></button>`;
+      if(isLibRef) {
+        block.style.cursor='pointer';
+        block.title='Cliquer pour ouvrir dans la Bibliothèque';
+        block.onclick=e=>{ if(e.target.closest('button')) return; if(t.sourceType==='todo') srOpenList(t.sourceListId); else srOpenNote(t.sourceNoteId); };
+      } else {
+        top.querySelector('.tb-check').onclick=e=>{e.stopPropagation(); togglePlanTask(t.id);};
+        if(!t._overflow) { block.ondblclick=e=>{e.stopPropagation(); editPlanTask(t.id,block);}; block.title='Double-clic pour modifier'; }
+      }
       block.appendChild(top); overlay.appendChild(block);
     });
 
@@ -3644,19 +3782,28 @@ function renderPlanningUI() {
         const wkLbl=getPlanLabel(t.label);
         const wkLabelBadge=wkLbl.id?`<span style="font-size:8px;font-weight:700;color:${wkLbl.color};background:${wkLbl.bg};border-radius:3px;padding:0 4px;margin-left:3px;">${wkLbl.name}</span>`:'';
         blk.innerHTML=`<span class="wk-tb-name">${overBadge}${escHtml(t.name)}${wkLabelBadge}</span><span class="wk-tb-time">${timeLbl}</span>`;
-        blk.title=`${t.name} (${timeLbl}) — Double-clic pour modifier`;
-        blk.ondblclick=e=>{e.stopPropagation(); editPlanTask(t.id,blk);};
+        const isLibRef = t.sourceType==='todo' || t.sourceType==='note';
+        blk.title = isLibRef ? `${t.name} — Cliquer pour ouvrir dans la Bibliothèque` : `${t.name} (${timeLbl}) — Double-clic pour modifier`;
+        if(isLibRef) {
+          blk.style.cursor='pointer';
+          blk.onclick=e=>{ if(e.target.closest('button')) return; if(t.sourceType==='todo') srOpenList(t.sourceListId); else srOpenNote(t.sourceNoteId); };
+        } else {
+          blk.ondblclick=e=>{e.stopPropagation(); editPlanTask(t.id,blk);};
+        }
 
         // Boutons check/delete au survol
         const acts=document.createElement('div');
         acts.style.cssText='position:absolute;top:2px;right:2px;display:none;gap:2px;';
-        const chk=document.createElement('button'); chk.style.cssText='border:none;background:var(--green);color:#fff;cursor:pointer;padding:0;width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;';
-        chk.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="9" height="9"><path d="M5 12l5 5L20 7"/></svg>';
-        chk.title='Cocher'; chk.onclick=e=>{e.stopPropagation();togglePlanTask(t.id);};
+        if(!isLibRef) {
+          const chk=document.createElement('button'); chk.style.cssText='border:none;background:var(--green);color:#fff;cursor:pointer;padding:0;width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;';
+          chk.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="9" height="9"><path d="M5 12l5 5L20 7"/></svg>';
+          chk.title='Cocher'; chk.onclick=e=>{e.stopPropagation();togglePlanTask(t.id);};
+          acts.appendChild(chk);
+        }
         const del=document.createElement('button'); del.style.cssText='border:none;background:var(--red);color:#fff;cursor:pointer;padding:0;width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;';
         del.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="9" height="9"><path d="M18 6L6 18M6 6l12 12"/></svg>';
         del.title='Supprimer'; del.onclick=e=>{e.stopPropagation();deletePlanTask(t.id);};
-        acts.append(chk,del); blk.appendChild(acts);
+        acts.appendChild(del); blk.appendChild(acts);
         blk.onmouseenter=()=>{acts.style.display='flex';}; blk.onmouseleave=()=>{acts.style.display='none';};
 
         col.appendChild(blk);
@@ -3833,11 +3980,13 @@ function renderPlanningUI() {
             // L'heure de fin d'origine est sauvegardée dans _originalEndTime au moment où la tâche est cochée
             // (endTime est alors remplacé par l'heure d'achèvement pour la timeline du jour).
             const realEnd = Object.prototype.hasOwnProperty.call(t,'_originalEndTime') ? t._originalEndTime : t.endTime;
-            items.push({type:'planning',name:t.name,sub:t.startTime?(t.startTime+(realEnd?' → '+realEnd:'')):'',completedAt:normalizePlanCompletedAt(t.completedAt,t.date),itemId:t.id,interactive:true});
+            const libRef = t.sourceType ? {type:t.sourceType, listId:t.sourceListId, noteId:t.sourceNoteId} : null;
+            items.push({type:'planning',name:t.name,sub:t.startTime?(t.startTime+(realEnd?' → '+realEnd:'')):'',completedAt:normalizePlanCompletedAt(t.completedAt,t.date),itemId:t.id,interactive:!libRef,libRef});
           });
         // Tâches planifiées non terminées, prévues ce jour-là (elles ont une date propre : t.date)
         planTasks.filter(t=>!t.done&&t.date===jDateStr).forEach(t=>{
-          items.push({type:'planning',name:t.name,sub:t.startTime?(t.startTime+(t.endTime?' → '+t.endTime:'')):'',completedAt:null,itemId:t.id,interactive:true,pending:true});
+          const libRef = t.sourceType ? {type:t.sourceType, listId:t.sourceListId, noteId:t.sourceNoteId} : null;
+          items.push({type:'planning',name:t.name,sub:t.startTime?(t.startTime+(t.endTime?' → '+t.endTime:'')):'',completedAt:null,itemId:t.id,interactive:!libRef,pending:true,libRef});
         });
         todoLists.forEach(list=>{
           if(!list.todos) return;
@@ -3987,7 +4136,11 @@ function renderPlanningUI() {
             const isMyday=item.type==='myday'||item.type==='myday-sub';
             const color=isPlanning?'var(--blue)':isMyday?'var(--orange)':'var(--green)';
             const el=document.createElement('div');
-            el.style.cssText='background:var(--bg);border:1px solid var(--border);padding:12px 16px;border-radius:var(--radius-md);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-sm);gap:12px;'+(item.pending?'opacity:0.85;':'');
+            el.style.cssText='background:var(--bg);border:1px solid var(--border);padding:12px 16px;border-radius:var(--radius-md);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;box-shadow:var(--shadow-sm);gap:12px;'+(item.pending?'opacity:0.85;':'')+(item.libRef?'cursor:pointer;':'');
+            if(item.libRef){
+              el.title='Ouvrir dans la Bibliothèque';
+              el.addEventListener('click',()=>{ if(item.libRef.type==='todo') srOpenList(item.libRef.listId); else srOpenNote(item.libRef.noteId); });
+            }
 
             const leftWrap=document.createElement('div');
             leftWrap.style.cssText='display:flex;align-items:center;gap:10px;min-width:0;';
@@ -4003,7 +4156,9 @@ function renderPlanningUI() {
             } else {
               const dot=document.createElement('div');
               dot.style.cssText='width:14px;height:14px;flex-shrink:0;';
-              dot.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M5 12l5 5L20 7"/></svg>';
+              dot.innerHTML = item.libRef
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M10 13a5 5 0 007 0l3-3a5 5 0 00-7-7l-1 1"/><path d="M14 11a5 5 0 00-7 0l-3 3a5 5 0 007 7l1-1"/></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M5 12l5 5L20 7"/></svg>';
               leftWrap.appendChild(dot);
             }
 
@@ -4090,6 +4245,7 @@ function renderPlanningUI() {
       container.appendChild(monthEl);
     }
   }
+  renderMyDayLinkedLists();
 }
 
 function goToPlanDate(dStr) {
