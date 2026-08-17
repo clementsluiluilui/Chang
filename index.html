@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('dark-theme');</script>
-<title>Mon Planning V1.22 - Repas</title>
+<title>Mon Planning V1.25 - Repas</title>
 <style>
 .ti { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; font-style: normal; vertical-align: -0.125em; }
 .ti svg { width: 100%; height: 100%; display: block; }
@@ -50,16 +50,15 @@ body { font-family: var(--font); background: var(--bg-tertiary); color: var(--te
   height: var(--topbar-h);
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  display: grid; grid-template-columns: 1.5fr auto 0.7fr; align-items: center;
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
   column-gap: 16px;
   padding: 0 24px;
   box-shadow: var(--shadow-sm);
 }
-.app-title { grid-column: 2; justify-self: center; font-size: 18px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 10px; letter-spacing: -0.3px; white-space: nowrap; }
-.app-title i { font-size: 22px; color: var(--blue); }
 .topbar-left { grid-column: 1; justify-self: start; display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .topbar-left::-webkit-scrollbar { display: none; }
-.topbar-right { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; }
+.topbar-right { grid-column: 2; justify-self: end; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.version-badge { font-size: 11px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.3px; flex-shrink: 0; }
 .date-badge { font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; }
 
 /* ── ONGLETS (maintenant dans topbar-left) ── */
@@ -207,6 +206,8 @@ button.icon-only.danger:hover { color: var(--red); background: var(--red-bg); }
 .sidebar-folder-actions i:hover { color: var(--red); }
 .sidebar-folder.active { background: var(--blue-bg); color: var(--blue); }
 .sidebar-folder.drag-over { outline: 2px dashed var(--orange); outline-offset: -2px; }
+.sr-quick-item.dragging, [id^="sr-row-"].dragging { opacity: 0.4; }
+.sr-quick-item.drag-over, [id^="sr-row-"].drag-over { outline: 2px dashed var(--orange); outline-offset: -2px; }
 
 /* ── SIDEBAR DROITE ── */
 .sidebar-right {
@@ -465,15 +466,14 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 @media (max-width: 768px) {
   :root { --topbar-h: 52px; --tabs-h: 0px; }
 
-  /* Topbar compacte : onglets à gauche (icônes seules), titre réduit au centre, actions à droite */
+  /* Topbar compacte : onglets à gauche (icônes seules), actions à droite */
   .topbar { padding: 0 8px; column-gap: 6px; }
-  .app-title { font-size: 0; gap: 0; }
-  .app-title i { font-size: 20px; }
   .date-badge { display: none; }
-  .topbar-left { gap: 2px; max-width: 34%; }
+  .version-badge { display: none; }
+  .topbar-left { gap: 2px; max-width: 68%; }
   .tab { padding: 7px 9px; font-size: 0; gap: 0; }
   .tab i { font-size: 17px; }
-  .topbar-right { gap: 4px; overflow-x: auto; max-width: 34%; scrollbar-width: none; }
+  .topbar-right { gap: 4px; overflow-x: auto; max-width: 30%; scrollbar-width: none; }
   .topbar-right::-webkit-scrollbar { display: none; }
   .topbar-right button { padding: 7px 9px; font-size: 0; gap: 0; flex-shrink: 0; }
   .topbar-right button i { font-size: 17px; }
@@ -536,11 +536,8 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
       <div class="plan-sub-tab" id="libbtn-workout" onclick="switchLibSub('workout')">Muscu</div>
     </div>
   </div>
-  <div class="app-title">
-    <i class="ti ti-layout-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></i>
-    Mon Planning V1.22
-  </div>
   <div class="topbar-right">
+    <span class="version-badge" id="version-badge">V1.25</span>
     <div class="date-badge" id="date-badge"></div>
     
     <button class="icon-only" onclick="openSyncModal()" title="Synchroniser entre appareils"><i class="ti ti-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h5M20 20v-5h-5M4.6 15A8 8 0 0019 15M19.4 9A8 8 0 004 9"/></svg></i></button>
@@ -1711,9 +1708,9 @@ function srRenderFolderNodeHtml(folder, allFolders, expanded, depth) {
   if(!isDefault) {
     const chevron = isOpen ? '▼' : '▶';
     const totalCount = folderLists.length + folderNotesArr.length + childFolders.length;
-    html += `<div style="display:flex;align-items:center;gap:2px;padding-left:${indent}px;">
+    html += `<div id="sr-row-folder-${folder.id}" draggable="true" ondragstart="srDragStart(event,'folder','${folder.id}')" ondragover="srDragOver(event)" ondragleave="srDragLeave(event)" ondrop="srDrop(event,'folder','${folder.id}')" style="display:flex;align-items:center;gap:2px;padding-left:${indent}px;">
       <div onclick="toggleSrFolder('${folder.id}')" style="display:flex;align-items:center;gap:5px;padding:6px 4px;cursor:pointer;flex:1;min-width:0;">
-        <span style="font-size:11px;font-weight:700;color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(folder.name)}</span>
+        <span id="sr-label-folder-${folder.id}" ondblclick="event.stopPropagation();srRenameFolder('${folder.id}')" style="font-size:11px;font-weight:700;color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:text;">${escHtml(folder.name)}</span>
         <span style="font-size:10px;color:var(--text-tertiary);flex-shrink:0;">${chevron} ${totalCount}</span>
       </div>
       <button onclick="event.stopPropagation();srAddFolder('${folder.id}')" title="Sous-dossier" class="icon-only" style="padding:2px;flex-shrink:0;">
@@ -1741,10 +1738,10 @@ function srRenderListNodeHtml(l, indent, folderId) {
   const done = l.todos.filter(t=>t.done).length;
   const isOpen = window._srExpandedLists.has(l.id);
   const chevron = l.todos.length ? (isOpen ? '▼' : '▶') : '';
-  let html = `<div class="sr-quick-item" style="padding-left:${indent}px;" onclick="toggleSrList(${l.id})">
+  let html = `<div class="sr-quick-item" id="sr-row-list-${l.id}" draggable="true" ondragstart="event.stopPropagation();srDragStart(event,'list',${l.id})" ondragover="srDragOver(event)" ondragleave="srDragLeave(event)" ondrop="event.stopPropagation();srDrop(event,'list',${l.id})" style="padding-left:${indent}px;" onclick="toggleSrList(${l.id})">
     ${chevron ? `<span style="font-size:9px;color:var(--text-tertiary);flex-shrink:0;">${chevron}</span>` : ''}
     <i class="ti" style="color:var(--green);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></i>
-    <span class="sr-quick-item-label" style="color:var(--green-text);">${escHtml(l.title)}</span>
+    <span class="sr-quick-item-label" ondblclick="event.stopPropagation();srRenameList(${l.id})" style="color:var(--green-text);cursor:text;">${escHtml(l.title)}</span>
     <span class="sr-quick-item-badge">${done}/${l.todos.length}</span>
     <button onclick="event.stopPropagation();srAddListItem(${l.id})" title="Ajouter un élément" style="flex-shrink:0;padding:2px 5px;font-size:10px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M12 5v14M5 12h14"/></svg>
@@ -1755,7 +1752,7 @@ function srRenderListNodeHtml(l, indent, folderId) {
   </div>`;
   if(isOpen) {
     l.todos.forEach(t => {
-      html += `<div class="sr-quick-item" id="sr-todo-${l.id}-${t.id}" style="padding-left:${SR_ITEM_INDENT}px;cursor:default;" onclick="event.stopPropagation();">
+      html += `<div class="sr-quick-item" id="sr-todo-${l.id}-${t.id}" draggable="true" ondragstart="event.stopPropagation();srDragStart(event,'item',${t.id},${l.id})" ondragover="event.stopPropagation();srDragOver(event)" ondragleave="srDragLeave(event)" ondrop="event.stopPropagation();srDrop(event,'item',${t.id},${l.id})" style="padding-left:${SR_ITEM_INDENT}px;cursor:default;" onclick="event.stopPropagation();">
         <span onclick="srToggleListItem(${l.id},${t.id})" style="cursor:pointer;flex-shrink:0;display:inline-flex;color:${t.done?'var(--green)':'var(--text-tertiary)'};">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13">${t.done?'<path d="M5 12l5 5L20 7"/>':'<circle cx="12" cy="12" r="8"/>'}</svg>
         </span>
@@ -1774,9 +1771,9 @@ function srRenderListNodeHtml(l, indent, folderId) {
 }
 
 function srRenderNoteNodeHtml(n, indent, folderId) {
-  let html = `<div class="sr-quick-item" style="padding-left:${indent}px;" onclick="srOpenNote(${n.id})">
+  let html = `<div class="sr-quick-item" id="sr-row-note-${n.id}" draggable="true" ondragstart="event.stopPropagation();srDragStart(event,'note',${n.id})" ondragover="event.stopPropagation();srDragOver(event)" ondragleave="srDragLeave(event)" ondrop="event.stopPropagation();srDrop(event,'note',${n.id})" style="padding-left:${indent}px;" onclick="srOpenNote(${n.id})">
     <i class="ti" style="color:var(--blue);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6h16M4 12h16M4 18h12"/></svg></i>
-    <span class="sr-quick-item-label" style="color:var(--blue);">${escHtml(n.title||'Sans titre')}</span>
+    <span class="sr-quick-item-label" ondblclick="event.stopPropagation();srRenameNote(${n.id})" style="color:var(--blue);cursor:text;">${escHtml(n.title||'Sans titre')}</span>
     <button onclick="event.stopPropagation();srAddNote(${n.id})" title="Sous-texte" style="flex-shrink:0;padding:2px 5px;font-size:10px;">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="11" height="11"><path d="M12 5v14M5 12h14"/></svg>
     </button>
@@ -1833,6 +1830,149 @@ function srSendNoteToMyDay(noteId) {
 }
 // Envoie un élément de liste (bibliothèque) vers Ma journée comme tâche du jour réelle,
 // liée à l'élément d'origine (coche/suppression synchronisées).
+// ── Renommage (double-clic) dans le panneau SD ──
+function srRenameFolder(folderId) {
+  const f = todoFolders.find(x=>x.id===folderId); if(!f) return;
+  const labelEl = document.getElementById(`sr-label-folder-${folderId}`); if(!labelEl) return;
+  startRenameSidebarItem(labelEl, f.name, (newName)=>{
+    f.name = newName;
+    if(f.planTaskId) { const pt=planTasks.find(p=>p.id===f.planTaskId); if(pt) pt.name = `Dossier "${newName}" ajouté`; }
+    saveData(); renderSrLibBlock();
+  });
+}
+function srRenameList(listId) {
+  const l = todoLists.find(x=>x.id===listId); if(!l) return;
+  const row = document.getElementById(`sr-row-list-${listId}`);
+  const labelEl = row ? row.querySelector('.sr-quick-item-label') : null;
+  if(!labelEl) return;
+  startRenameSidebarItem(labelEl, l.title, (newTitle)=>{
+    l.title = newTitle;
+    if(l.planTaskId) { const pt=planTasks.find(p=>p.id===l.planTaskId); if(pt) pt.name = `Liste "${newTitle}" ajoutée`; }
+    saveData(); renderSrLibBlock();
+  });
+}
+function srRenameNote(noteId) {
+  const n = notes.find(x=>x.id===noteId); if(!n) return;
+  const row = document.getElementById(`sr-row-note-${noteId}`);
+  const labelEl = row ? row.querySelector('.sr-quick-item-label') : null;
+  if(!labelEl) return;
+  startRenameSidebarItem(labelEl, n.title||'Sans titre', (newTitle)=>{
+    n.title = newTitle;
+    if(n.planTaskId) { const pt=planTasks.find(p=>p.id===n.planTaskId); if(pt) pt.name = `Texte "${newTitle||'Nouveau texte'}" ajouté`; }
+    saveData(); renderSrLibBlock();
+  });
+}
+
+// ── Glisser-déposer dans le panneau SD : réordonner ou mettre en sous-hiérarchie ──
+window._srDrag = null;
+function srDragStart(e, type, id, listId) {
+  window._srDrag = { type, id, listId: listId!=null ? listId : null };
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => { const el = e.target.closest ? e.target.closest('[draggable]') : null; if(el) el.classList.add('dragging'); }, 0);
+}
+function srDragOver(e) {
+  if(!window._srDrag) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const row = e.currentTarget;
+  if(row) row.classList.add('drag-over');
+}
+function srDragLeave(e) {
+  const row = e.currentTarget;
+  if(row) row.classList.remove('drag-over');
+}
+function srDrop(e, type, id, listId) {
+  e.preventDefault();
+  const row = e.currentTarget;
+  if(row) row.classList.remove('drag-over');
+  const dragged = window._srDrag;
+  window._srDrag = null;
+  if(!dragged) return;
+  const target = { type, id, listId: listId!=null ? listId : null };
+  if(dragged.type===target.type && dragged.id===target.id && dragged.listId===target.listId) return;
+  srMoveItem(dragged, target);
+}
+function isDescendantFolder(ancestorId, folderId) {
+  let f = todoFolders.find(x=>x.id===folderId);
+  let guard = 0;
+  while(f && f.parentId && guard++ < 100) {
+    if(f.parentId === ancestorId) return true;
+    f = todoFolders.find(x=>x.id===f.parentId);
+  }
+  return false;
+}
+function srMoveItem(dragged, target) {
+  // Dossier déposé sur un dossier → devient sous-dossier de la cible
+  if(dragged.type==='folder' && target.type==='folder') {
+    if(dragged.id===target.id || isDescendantFolder(dragged.id, target.id) || dragged.id==='default') return;
+    const f = todoFolders.find(x=>x.id===dragged.id); if(!f) return;
+    f.parentId = target.id;
+    window._srExpandedFolders.combined.add(target.id);
+    saveData(); renderSrLibBlock(); return;
+  }
+  // Liste ou texte déposé sur un dossier → déplacé dans ce dossier (au premier niveau)
+  if((dragged.type==='list'||dragged.type==='note') && target.type==='folder') {
+    if(dragged.type==='list') {
+      const l = todoLists.find(x=>x.id===dragged.id); if(!l) return;
+      l.folderId = target.id; l.parentListId = null;
+    } else {
+      const n = notes.find(x=>x.id===dragged.id); if(!n) return;
+      n.folderId = target.id; n.parentNoteId = null;
+    }
+    window._srExpandedFolders.combined.add(target.id);
+    saveData(); renderSrLibBlock(); return;
+  }
+  // Liste déposée sur une liste → devient sœur de la cible (même dossier/parent), positionnée avant elle
+  if(dragged.type==='list' && target.type==='list') {
+    if(dragged.id===target.id) return;
+    const l = todoLists.find(x=>x.id===dragged.id); const t = todoLists.find(x=>x.id===target.id);
+    if(!l || !t) return;
+    let anc = t; let guard=0;
+    while(anc && anc.parentListId && guard++<100) { if(anc.parentListId===l.id) return; anc = todoLists.find(x=>x.id===anc.parentListId); }
+    todoLists = todoLists.filter(x=>x.id!==l.id);
+    l.folderId = t.folderId; l.parentListId = t.parentListId;
+    const idx = todoLists.findIndex(x=>x.id===t.id);
+    todoLists.splice(idx, 0, l);
+    saveData(); renderSrLibBlock(); return;
+  }
+  // Texte déposé sur un texte → devient sœur de la cible, positionné avant elle
+  if(dragged.type==='note' && target.type==='note') {
+    if(dragged.id===target.id) return;
+    const n = notes.find(x=>x.id===dragged.id); const t = notes.find(x=>x.id===target.id);
+    if(!n || !t) return;
+    let anc = t; let guard=0;
+    while(anc && anc.parentNoteId && guard++<100) { if(anc.parentNoteId===n.id) return; anc = notes.find(x=>x.id===anc.parentNoteId); }
+    notes = notes.filter(x=>x.id!==n.id);
+    n.folderId = t.folderId; n.parentNoteId = t.parentNoteId;
+    const idx = notes.findIndex(x=>x.id===t.id);
+    notes.splice(idx, 0, n);
+    saveData(); renderSrLibBlock(); return;
+  }
+  // Élément déposé sur une liste (son en-tête) → déplacé à la fin de cette liste
+  if(dragged.type==='item' && target.type==='list') {
+    const srcList = todoLists.find(x=>x.id===dragged.listId); const destList = todoLists.find(x=>x.id===target.id);
+    if(!srcList || !destList) return;
+    const idx = srcList.todos.findIndex(x=>x.id===dragged.id);
+    if(idx===-1) return;
+    const [it] = srcList.todos.splice(idx, 1);
+    destList.todos.push(it);
+    saveData(); renderSrLibBlock(); return;
+  }
+  // Élément déposé sur un autre élément → réordonné/déplacé juste avant lui (même liste ou liste différente)
+  if(dragged.type==='item' && target.type==='item') {
+    if(dragged.id===target.id && dragged.listId===target.listId) return;
+    const srcList = todoLists.find(x=>x.id===dragged.listId); const destList = todoLists.find(x=>x.id===target.listId);
+    if(!srcList || !destList) return;
+    const srcIdx = srcList.todos.findIndex(x=>x.id===dragged.id);
+    if(srcIdx===-1) return;
+    const [it] = srcList.todos.splice(srcIdx, 1);
+    const destIdx = destList.todos.findIndex(x=>x.id===target.id);
+    destList.todos.splice(destIdx===-1?destList.todos.length:destIdx, 0, it);
+    saveData(); renderSrLibBlock(); return;
+  }
+  // Autres combinaisons non prises en charge : ignorées
+}
+
 function srSendItemToMyDay(listId, itemId) {
   const l = todoLists.find(x=>x.id===listId); if(!l) return;
   const item = l.todos.find(x=>x.id===itemId); if(!item) return;
