@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('dark-theme');</script>
-<title>Mon Planning V1.25 - Repas</title>
+<title>Mon Planning V1.26 - Repas</title>
 <style>
 .ti { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; font-style: normal; vertical-align: -0.125em; }
 .ti svg { width: 100%; height: 100%; display: block; }
@@ -466,14 +466,19 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 @media (max-width: 768px) {
   :root { --topbar-h: 52px; --tabs-h: 0px; }
 
-  /* Topbar compacte : onglets à gauche (icônes seules), actions à droite */
+  /* Topbar compacte : onglets à gauche (défilement horizontal), actions à droite */
   .topbar { padding: 0 8px; column-gap: 6px; }
   .date-badge { display: none; }
   .version-badge { display: none; }
-  .topbar-left { gap: 2px; max-width: 68%; }
-  .tab { padding: 7px 9px; font-size: 0; gap: 0; }
-  .tab i { font-size: 17px; }
-  .topbar-right { gap: 4px; overflow-x: auto; max-width: 30%; scrollbar-width: none; }
+  .topbar-left {
+    gap: 6px; max-width: 72%;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+  }
+  .subtabs-bar-group { padding: 3px; gap: 2px; }
+  .plan-sub-tab { padding: 6px 10px; font-size: 12.5px; }
+  .topbar-right { gap: 4px; overflow-x: auto; max-width: 26%; scrollbar-width: none; }
   .topbar-right::-webkit-scrollbar { display: none; }
   .topbar-right button { padding: 7px 9px; font-size: 0; gap: 0; flex-shrink: 0; }
   .topbar-right button i { font-size: 17px; }
