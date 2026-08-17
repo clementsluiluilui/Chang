@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script>document.documentElement.classList.add('dark-theme');</script>
-<title>Mon Planning V1.27 - Repas</title>
+<title>Mon Planning V1.25 - Repas</title>
 <style>
 .ti { display: inline-flex; align-items: center; justify-content: center; width: 1em; height: 1em; font-style: normal; vertical-align: -0.125em; }
 .ti svg { width: 100%; height: 100%; display: block; }
@@ -55,8 +55,11 @@ body { font-family: var(--font); background: var(--bg-tertiary); color: var(--te
   padding: 0 24px;
   box-shadow: var(--shadow-sm);
 }
-.topbar-left { grid-column: 1; justify-self: start; display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.topbar-left-wrap { grid-column: 1; justify-self: start; display: flex; align-items: center; gap: 2px; min-width: 0; width: 100%; }
+.topbar-left { display: flex; align-items: center; gap: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; scroll-behavior: smooth; }
 .topbar-left::-webkit-scrollbar { display: none; }
+.tabs-scroll-arrow { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; }
+.tabs-scroll-arrow:hover { background: var(--bg); color: var(--text); }
 .topbar-right { grid-column: 2; justify-self: end; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .version-badge { font-size: 11px; color: var(--text-tertiary); font-weight: 600; letter-spacing: 0.3px; flex-shrink: 0; }
 .date-badge { font-size: 13px; font-weight: 500; color: var(--text-secondary); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; }
@@ -206,8 +209,6 @@ button.icon-only.danger:hover { color: var(--red); background: var(--red-bg); }
 .sidebar-folder-actions i:hover { color: var(--red); }
 .sidebar-folder.active { background: var(--blue-bg); color: var(--blue); }
 .sidebar-folder.drag-over { outline: 2px dashed var(--orange); outline-offset: -2px; }
-.sr-quick-item.dragging, [id^="sr-row-"].dragging { opacity: 0.4; }
-.sr-quick-item.drag-over, [id^="sr-row-"].drag-over { outline: 2px dashed var(--orange); outline-offset: -2px; }
 
 /* ── SIDEBAR DROITE ── */
 .sidebar-right {
@@ -444,6 +445,8 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 .sr-quick-item i { font-size: 14px; flex-shrink: 0; color: var(--text-tertiary); }
 .sr-quick-item-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sr-quick-item-badge { font-size: 10px; font-weight: 700; color: var(--text-tertiary); background: var(--bg-tertiary); padding: 1px 5px; border-radius: 6px; }
+.sr-quick-item.dragging, [id^="sr-row-"].dragging { opacity: 0.4; }
+.sr-quick-item.drag-over, [id^="sr-row-"].drag-over { outline: 2px dashed var(--orange); outline-offset: -2px; }
 .sr-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
 .sr-tab { flex: 1; padding: 5px 4px; font-size: 12px; font-weight: 600; border-radius: 7px; cursor: pointer; text-align: center; color: var(--text-tertiary); background: transparent; border: 1px solid transparent; transition: all .15s; }
 .sr-tab.active { background: var(--blue-bg); color: var(--blue); border-color: rgba(42,129,169,0.2); }
@@ -470,14 +473,18 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
   .topbar { padding: 0 8px; column-gap: 6px; }
   .date-badge { display: none; }
   .version-badge { display: none; }
+  .topbar-left-wrap { max-width: 72%; }
   .topbar-left {
-    gap: 6px; max-width: 72%;
+    gap: 6px;
     -webkit-overflow-scrolling: touch;
     -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
     mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
   }
+  .tabs-scroll-arrow { width: 20px; height: 20px; }
   .subtabs-bar-group { padding: 3px; gap: 2px; }
   .plan-sub-tab { padding: 6px 10px; font-size: 12.5px; }
+  .tab { padding: 7px 9px; font-size: 0; gap: 0; }
+  .tab i { font-size: 17px; }
   .topbar-right { gap: 4px; overflow-x: auto; max-width: 26%; scrollbar-width: none; }
   .topbar-right::-webkit-scrollbar { display: none; }
   .topbar-right button { padding: 7px 9px; font-size: 0; gap: 0; flex-shrink: 0; }
@@ -523,26 +530,34 @@ th.score30-header { font-size: 11px; font-weight: 700; color: var(--text-seconda
 <body>
 
 <div class="topbar">
-  <div class="topbar-left" id="subtabs-bar">
-    <div class="subtabs-bar-group" id="subtabs-myday" data-group="myday">
-      <div class="plan-sub-tab active" id="tab-myday" onclick="switchTab('myday')">Ma journée</div>
+  <div class="topbar-left-wrap" id="topbar-left-wrap">
+    <button class="tabs-scroll-arrow" id="tabs-scroll-left" onclick="scrollTabsBar(-1)" title="Défiler vers la gauche">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="topbar-left" id="subtabs-bar">
+      <div class="subtabs-bar-group" id="subtabs-myday" data-group="myday">
+        <div class="plan-sub-tab active" id="tab-myday" onclick="switchTab('myday')">Ma journée</div>
+      </div>
+      <div class="subtabs-bar-group" id="subtabs-planning" data-group="planning">
+        <div class="plan-sub-tab" id="pst-view" onclick="switchPlanSub('view')">Aujourd'hui</div>
+        <div class="plan-sub-tab" id="pst-2days" onclick="switchPlanSub('2days')">Vue 2 jours</div>
+        <div class="plan-sub-tab" id="pst-week" onclick="switchPlanSub('week')">Vue semaine</div>
+        <div class="plan-sub-tab" id="pst-year" onclick="switchPlanSub('year')">Vue année</div>
+        <div class="plan-sub-tab" id="pst-journal" onclick="switchPlanSub('journal')">Journal</div>
+      </div>
+      <div class="subtabs-bar-group" id="subtabs-library" data-group="library">
+        <div class="plan-sub-tab" id="libbtn-todos" onclick="switchLibSub('todos')">Dossier/Projet</div>
+        <div class="plan-sub-tab" id="libbtn-habits" onclick="switchLibSub('habits')">Habitudes</div>
+        <div class="plan-sub-tab" id="libbtn-meals" onclick="switchLibSub('meals')">Repas</div>
+        <div class="plan-sub-tab" id="libbtn-workout" onclick="switchLibSub('workout')">Muscu</div>
+      </div>
     </div>
-    <div class="subtabs-bar-group" id="subtabs-planning" data-group="planning">
-      <div class="plan-sub-tab" id="pst-view" onclick="switchPlanSub('view')">Aujourd'hui</div>
-      <div class="plan-sub-tab" id="pst-2days" onclick="switchPlanSub('2days')">Vue 2 jours</div>
-      <div class="plan-sub-tab" id="pst-week" onclick="switchPlanSub('week')">Vue semaine</div>
-      <div class="plan-sub-tab" id="pst-year" onclick="switchPlanSub('year')">Vue année</div>
-      <div class="plan-sub-tab" id="pst-journal" onclick="switchPlanSub('journal')">Journal</div>
-    </div>
-    <div class="subtabs-bar-group" id="subtabs-library" data-group="library">
-      <div class="plan-sub-tab" id="libbtn-todos" onclick="switchLibSub('todos')">Dossier/Projet</div>
-      <div class="plan-sub-tab" id="libbtn-habits" onclick="switchLibSub('habits')">Habitudes</div>
-      <div class="plan-sub-tab" id="libbtn-meals" onclick="switchLibSub('meals')">Repas</div>
-      <div class="plan-sub-tab" id="libbtn-workout" onclick="switchLibSub('workout')">Muscu</div>
-    </div>
+    <button class="tabs-scroll-arrow" id="tabs-scroll-right" onclick="scrollTabsBar(1)" title="Défiler vers la droite">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
   </div>
   <div class="topbar-right">
-    <span class="version-badge" id="version-badge">V1.27</span>
+    <span class="version-badge" id="version-badge">V1.25</span>
     <div class="date-badge" id="date-badge"></div>
     
     <button class="icon-only" onclick="openSyncModal()" title="Synchroniser entre appareils"><i class="ti ti-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v5h5M20 20v-5h-5M4.6 15A8 8 0 0019 15M19.4 9A8 8 0 004 9"/></svg></i></button>
@@ -1205,6 +1220,22 @@ function updateSubtabsBar() {
   // Les onglets sont désormais fusionnés dans la barre du haut (une seule ligne) : plus de seconde hauteur à réserver.
   document.documentElement.style.setProperty('--tabs-h', '0px');
 }
+// ── Défilement de la barre d'onglets (molette de souris + flèches) ──
+function scrollTabsBar(dir) {
+  const bar = document.getElementById('subtabs-bar');
+  if(bar) bar.scrollBy({ left: dir * 160, behavior: 'smooth' });
+}
+(function initTabsBarWheelScroll() {
+  const bar = document.getElementById('subtabs-bar');
+  if(!bar) return;
+  bar.addEventListener('wheel', (e) => {
+    // Convertit le défilement vertical de la molette en défilement horizontal.
+    const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    if(delta === 0) return;
+    bar.scrollLeft += delta;
+    e.preventDefault();
+  }, { passive: false });
+})();
 function switchPlanSub(sub) {
   _activePlanSub = sub;
   setActiveTab('planning');
@@ -1489,6 +1520,7 @@ function sidebarAddLibraryMealById(id) {
   showToast(`"${m.name}" ajouté !`);
   renderMyDaySidebar();
   if(typeof renderMealLog === 'function') renderMealLog();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday') renderMyDayUI();
 }
 
 function sidebarAddFromLibrary() {
@@ -1508,6 +1540,7 @@ function sidebarAddFromLibrary() {
   showToast(`"${m.name}" ajouté !`);
   renderMyDaySidebar();
   if(typeof renderMealLog === 'function') renderMealLog();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday') renderMyDayUI();
 }
 
 function sidebarAddHabit() {
@@ -1552,13 +1585,65 @@ function sidebarAddMeal() {
   renderMyDaySidebar();
   // Rafraîchir la vue Repas si elle est ouverte
   if(typeof renderMealLog === 'function') renderMealLog();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday') renderMyDayUI();
 }
 
 function sidebarDeleteMeal(dateStr, id) {
+  const m = (mealLog[dateStr] || []).find(x => x.id === id);
+  if(m && m.planTaskId) planTasks = planTasks.filter(p => p.id !== m.planTaskId);
   mealLog[dateStr] = (mealLog[dateStr] || []).filter(m => m.id !== id);
   saveData();
   renderMyDaySidebar();
   if(typeof renderMealLog === 'function') renderMealLog();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday') renderMyDayUI();
+  if(typeof renderPlanningUI === 'function' && _activeTab === 'planning') renderPlanningUI();
+}
+// Démarre un repas : l'ajoute au Planning avec l'heure actuelle comme heure de début
+// (même principe que "Démarrer" pour une tâche de Ma journée).
+function startMealLog(dateStr, id) {
+  const m = (mealLog[dateStr] || []).find(x => x.id === id); if(!m) return;
+  if(m.planTaskId) return;
+  const planTask = { id: Date.now(), date: dateStr, name: m.name, startTime: nowStr(), endTime: null, done: false, completedAt: null, label: '', sourceType:'meal', sourceMealDate: dateStr, sourceMealId: m.id };
+  planTasks.push(planTask);
+  m.planTaskId = planTask.id;
+  saveData(); renderMyDayUI(); renderPlanningUI();
+  showToast('Repas démarré : ajouté au planning !');
+}
+// Coche/décoche un repas affiché au centre de Ma journée (même fonction qu'une case à cocher de tâche).
+// Si le repas a été démarré (présent dans le planning), cocher renseigne son heure de fin ;
+// décocher restaure l'heure de fin précédente — comme pour une tâche.
+function toggleMealLogDone(dateStr, id) {
+  const m = (mealLog[dateStr] || []).find(x => x.id === id); if(!m) return;
+  m.done = !m.done;
+  if(m.planTaskId) {
+    const pt = planTasks.find(p => p.id === m.planTaskId);
+    if(pt) {
+      if(m.done) { pt.done = true; pt.completedAt = nowFullStr(); pt._originalEndTime = pt.endTime; pt.endTime = nowStr(); }
+      else { pt.done = false; pt.completedAt = null; pt.endTime = pt._originalEndTime || null; delete pt._originalEndTime; }
+    }
+  }
+  saveData();
+  renderMyDayUI();
+  renderMyDaySidebar();
+  if(typeof renderMealLog === 'function') renderMealLog();
+  if(m.planTaskId && typeof renderPlanningUI === 'function' && _activeTab === 'planning') renderPlanningUI();
+}
+// Renomme un repas par double-clic, comme pour une tâche.
+function editMealLogName(dateStr, id) {
+  const m = (mealLog[dateStr] || []).find(x => x.id === id); if(!m) return;
+  const div = document.getElementById('myday-meal-text-'+id); if(!div) return;
+  const input = document.createElement('input'); input.type='text'; input.className='todo-text-input'; input.value=m.name;
+  div.replaceWith(input); input.focus(); input.select();
+  input.addEventListener('blur', () => {
+    if(input.value.trim()) {
+      m.name = input.value.trim(); saveData();
+      if(m.planTaskId) { const pt = planTasks.find(p=>p.id===m.planTaskId); if(pt) pt.name = m.name; }
+    }
+    renderMyDayUI();
+    renderMyDaySidebar();
+    if(typeof renderMealLog === 'function') renderMealLog();
+  });
+  input.addEventListener('keydown', (e) => { if(e.key==='Enter') input.blur(); });
 }
 
 function renderMyDayUI() {
@@ -1583,12 +1668,13 @@ function renderMyDayUI() {
   }
 
   const container = document.getElementById('myday-tasks-container');
-  if(entry.tasks.length === 0) {
+  const todayMealsForCenter = mealLog[dStr] || [];
+  if(entry.tasks.length === 0 && todayMealsForCenter.length === 0) {
     container.innerHTML = '<div class="empty-state">Aucune tâche pour ce jour.</div>';
   } else {
     const ctxKey = 'myday:'+dStr;
     registerSubtaskContext(ctxKey, () => getMyDayEntry(dStr).tasks, renderMyDayUI);
-    container.innerHTML = entry.tasks.map(t => {
+    let html = entry.tasks.map(t => {
       if(t.isTextEntry) {
         return `<div class="todo-row" style="cursor:pointer;" onclick="srOpenNote(${t.libNoteId})">
           <span style="flex-shrink:0;display:inline-flex;color:var(--blue);">
@@ -1639,6 +1725,43 @@ function renderMyDayUI() {
       </div>`;
       return rowHtml + renderTaskDescriptionBlock(ctxKey, t.id, t) + renderTaskChildren(t, [t.id], ctxKey, 1);
     }).join('');
+    // Repas du jour : injectés au centre avec les mêmes fonctions qu'une tâche
+    // (case à cocher → renseigne une heure de fin si démarré, bouton Démarrer, description, suppression).
+    const mealCtxKey = 'meal:'+dStr;
+    registerSubtaskContext(mealCtxKey, () => mealLog[dStr] || [], renderMyDayUI);
+    html += todayMealsForCenter.map(m => {
+      const linkedPlan = m.planTaskId ? planTasks.find(p=>p.id===m.planTaskId) : null;
+      const mealStartControl = linkedPlan
+        ? `<span title="Dans le planning depuis ${linkedPlan.startTime}" style="font-size:10px;font-weight:700;color:var(--green-text);background:var(--green-bg);border-radius:10px;padding:2px 8px;flex-shrink:0;display:inline-flex;align-items:center;gap:4px;white-space:nowrap;">
+             <svg viewBox="0 0 24 24" fill="currentColor" width="9" height="9"><polygon points="6 3 20 12 6 21 6 3"/></svg>${linkedPlan.startTime}${linkedPlan.endTime?'→'+linkedPlan.endTime:''}
+           </span>`
+        : `<button class="btn-subtask" onclick="startMealLog('${dStr}',${m.id})" title="Démarrer (ajoute le repas au planning avec l'heure actuelle)">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+           </button>`;
+      const rowHtml = `
+      <div class="todo-row ${m.done?'done-item':''}">
+        <div class="todo-checkbox ${m.done?'checked':''}" onclick="toggleMealLogDone('${dStr}',${m.id})">
+          <i class="ti ti-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></i>
+        </div>
+        <span style="flex-shrink:0;display:inline-flex;color:var(--orange);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8zM6 1v3M10 1v3M14 1v3"/></svg>
+        </span>
+        <div class="todo-text" id="myday-meal-text-${m.id}" ondblclick="editMealLogName('${dStr}',${m.id})">${escHtml(m.name)}</div>
+        <span style="font-size:10px;font-weight:600;color:var(--text-tertiary);background:var(--bg-tertiary);padding:2px 6px;border-radius:8px;flex-shrink:0;">${m.time}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--orange);flex-shrink:0;">+${m.cal} kcal</span>
+        <div class="todo-row-actions">
+          ${mealStartControl}
+          <button class="btn-subtask ${m.description?'has-content':''}" onclick="toggleTaskDescription('${mealCtxKey}',${m.id})" title="Description">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+          </button>
+          <button class="icon-only danger" onclick="sidebarDeleteMeal('${dStr}',${m.id})">
+            <i class="ti ti-trash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16m-10 4v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg></i>
+          </button>
+        </div>
+      </div>`;
+      return rowHtml + renderTaskDescriptionBlock(mealCtxKey, m.id, m);
+    }).join('');
+    container.innerHTML = html;
   }
   const noteEl = document.getElementById('myday-note-input');
   if(noteEl) noteEl.value = entry.note || '';
@@ -1793,48 +1916,6 @@ function srRenderNoteNodeHtml(n, indent, folderId) {
   return html;
 }
 
-function srAddListItem(listId) {
-  const l = todoLists.find(x=>x.id===listId); if(!l) return;
-  const text = 'Nouvel élément';
-  const todoId = Date.now();
-  const planTaskId = todoId + 1;
-  l.todos.push({ id: todoId, text, done:false, planTaskId });
-  planTasks.push({ id: planTaskId, date: formatDateString(new Date()), name: `Tâche "${text}" ajoutée`, startTime: nowStr(), endTime: null, done:false, completedAt:null, label:'', sourceType:'todo', sourceListId: l.id, sourceItemId: todoId });
-  window._srExpandedLists.add(listId);
-  saveData(); renderSrLibBlock();
-  const rowEl = document.getElementById(`sr-todo-${listId}-${todoId}`);
-  const labelEl = rowEl ? rowEl.querySelector('.sr-quick-item-label') : null;
-  if(labelEl) startRenameSidebarItem(labelEl, text, (newText)=>{
-    const item = l.todos.find(x=>x.id===todoId);
-    if(item) { item.text = newText; if(item.planTaskId){ const pt=planTasks.find(p=>p.id===item.planTaskId); if(pt) pt.name = `Tâche "${newText}" ajoutée`; } }
-    saveData(); renderSrLibBlock();
-  });
-}
-function srRenameListItem(listId, itemId) {
-  const l = todoLists.find(x=>x.id===listId); if(!l) return;
-  const item = l.todos.find(x=>x.id===itemId); if(!item) return;
-  const rowEl = document.getElementById(`sr-todo-${listId}-${itemId}`);
-  const labelEl = rowEl ? rowEl.querySelector('.sr-quick-item-label') : null;
-  if(!labelEl) return;
-  startRenameSidebarItem(labelEl, item.text, (newText)=>{
-    item.text = newText;
-    if(item.planTaskId){ const pt=planTasks.find(p=>p.id===item.planTaskId); if(pt) pt.name = `Tâche "${newText}" ajoutée`; }
-    saveData(); renderSrLibBlock();
-  });
-}
-// Envoie un texte (note) vers Ma journée comme tâche du jour (liée au texte via libNoteId, sans synchro de coche).
-function srSendNoteToMyDay(noteId) {
-  const n = notes.find(x=>x.id===noteId); if(!n) return;
-  const dStr = formatDateString(getMyDayDateObj(currentMyDayOffset));
-  const entry = getMyDayEntry(dStr);
-  if(entry.tasks.some(t=>t.libNoteId===noteId)) { showToast('Déjà dans Ma journée.'); return; }
-  entry.tasks.push({ id: Date.now(), text: n.title || 'Sans titre', isTextEntry:true, folderId: n.folderId, libNoteId: noteId });
-  saveData();
-  showToast('Ajouté à Ma journée !');
-  if(_activeTab === 'myday') renderMyDayUI();
-}
-// Envoie un élément de liste (bibliothèque) vers Ma journée comme tâche du jour réelle,
-// liée à l'élément d'origine (coche/suppression synchronisées).
 // ── Renommage (double-clic) dans le panneau SD ──
 function srRenameFolder(folderId) {
   const f = todoFolders.find(x=>x.id===folderId); if(!f) return;
@@ -1978,6 +2059,48 @@ function srMoveItem(dragged, target) {
   // Autres combinaisons non prises en charge : ignorées
 }
 
+function srAddListItem(listId) {
+  const l = todoLists.find(x=>x.id===listId); if(!l) return;
+  const text = 'Nouvel élément';
+  const todoId = Date.now();
+  const planTaskId = todoId + 1;
+  l.todos.push({ id: todoId, text, done:false, planTaskId });
+  planTasks.push({ id: planTaskId, date: formatDateString(new Date()), name: `Tâche "${text}" ajoutée`, startTime: nowStr(), endTime: null, done:false, completedAt:null, label:'', sourceType:'todo', sourceListId: l.id, sourceItemId: todoId });
+  window._srExpandedLists.add(listId);
+  saveData(); renderSrLibBlock();
+  const rowEl = document.getElementById(`sr-todo-${listId}-${todoId}`);
+  const labelEl = rowEl ? rowEl.querySelector('.sr-quick-item-label') : null;
+  if(labelEl) startRenameSidebarItem(labelEl, text, (newText)=>{
+    const item = l.todos.find(x=>x.id===todoId);
+    if(item) { item.text = newText; if(item.planTaskId){ const pt=planTasks.find(p=>p.id===item.planTaskId); if(pt) pt.name = `Tâche "${newText}" ajoutée`; } }
+    saveData(); renderSrLibBlock();
+  });
+}
+function srRenameListItem(listId, itemId) {
+  const l = todoLists.find(x=>x.id===listId); if(!l) return;
+  const item = l.todos.find(x=>x.id===itemId); if(!item) return;
+  const rowEl = document.getElementById(`sr-todo-${listId}-${itemId}`);
+  const labelEl = rowEl ? rowEl.querySelector('.sr-quick-item-label') : null;
+  if(!labelEl) return;
+  startRenameSidebarItem(labelEl, item.text, (newText)=>{
+    item.text = newText;
+    if(item.planTaskId){ const pt=planTasks.find(p=>p.id===item.planTaskId); if(pt) pt.name = `Tâche "${newText}" ajoutée`; }
+    saveData(); renderSrLibBlock();
+  });
+}
+// Envoie un texte (note) vers Ma journée comme tâche du jour (liée au texte via libNoteId, sans synchro de coche).
+function srSendNoteToMyDay(noteId) {
+  const n = notes.find(x=>x.id===noteId); if(!n) return;
+  const dStr = formatDateString(getMyDayDateObj(currentMyDayOffset));
+  const entry = getMyDayEntry(dStr);
+  if(entry.tasks.some(t=>t.libNoteId===noteId)) { showToast('Déjà dans Ma journée.'); return; }
+  entry.tasks.push({ id: Date.now(), text: n.title || 'Sans titre', isTextEntry:true, folderId: n.folderId, libNoteId: noteId });
+  saveData();
+  showToast('Ajouté à Ma journée !');
+  if(_activeTab === 'myday') renderMyDayUI();
+}
+// Envoie un élément de liste (bibliothèque) vers Ma journée comme tâche du jour réelle,
+// liée à l'élément d'origine (coche/suppression synchronisées).
 function srSendItemToMyDay(listId, itemId) {
   const l = todoLists.find(x=>x.id===listId); if(!l) return;
   const item = l.todos.find(x=>x.id===itemId); if(!item) return;
@@ -3096,6 +3219,7 @@ function addMealLog() {
   document.getElementById('log-meal-cal').value = '';
   showToast("Repas ajouté !"); renderMealLog();
   renderMyDaySidebar();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday' && dStr === formatDateString(getMyDayDateObj(currentMyDayOffset))) renderMyDayUI();
 }
 
 function addMealLogToLibrary() {
@@ -3121,11 +3245,16 @@ function addMealLogToLibrary() {
   renderMealLibrarySidebar(document.getElementById('sidebar'));
   renderMealRightSidebar();
   renderMyDaySidebar();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday' && dStr === formatDateString(getMyDayDateObj(currentMyDayOffset))) renderMyDayUI();
 }
 
 function deleteMealLog(dateStr, id) {
+  const m = (mealLog[dateStr]||[]).find(x => x.id === id);
+  if(m && m.planTaskId) planTasks = planTasks.filter(p => p.id !== m.planTaskId);
   mealLog[dateStr] = mealLog[dateStr].filter(m => m.id !== id);
   saveData(); renderMealLog(); renderMyDaySidebar();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday' && dateStr === formatDateString(getMyDayDateObj(currentMyDayOffset))) renderMyDayUI();
+  if(typeof renderPlanningUI === 'function' && _activeTab === 'planning') renderPlanningUI();
 }
 
 function saveCalGoal() {
@@ -3661,6 +3790,7 @@ function quickAddLibraryMeal(libMeal) {
   showToast(`"${libMeal.name}" ajouté au journal !`);
   renderMealLog();
   renderMyDaySidebar();
+  if(typeof renderMyDayUI === 'function' && _activeTab === 'myday' && dStr === formatDateString(getMyDayDateObj(currentMyDayOffset))) renderMyDayUI();
 }
 
 function quickAddLibraryMealById(id) {
@@ -3738,11 +3868,11 @@ function formatDateTime(ts) { if(!ts) return ''; const d=new Date(ts); return `$
 
 let currentPlanOffset = 0;
 let currentJournalOffset = 0;
-let journalFilter = { notes:true, tasks:true };
+let journalFilter = { notes:true, tasks:true, meals:true };
 let journalFolderFilter = {}; // { folderId: true/false } — true (ou absent) = visible
 function toggleJournalFilter(key){
   journalFilter[key] = !journalFilter[key];
-  if(!journalFilter.notes && !journalFilter.tasks) journalFilter[key] = true; // au moins un filtre actif
+  if(!journalFilter.notes && !journalFilter.tasks && !journalFilter.meals) journalFilter[key] = true; // au moins un filtre actif
   renderPlanningUI();
 }
 function toggleJournalFolderFilter(folderId){
@@ -3815,16 +3945,25 @@ function togglePlanTask(id) {
   else { t.done=true; t.completedAt=nowFullStr(); t._originalEndTime=t.endTime; t.endTime=nowStr(); showToast('Tâche accomplie !'); }
   syncSourceItemDone(t);
   saveData(); renderPlanningUI();
+  if(t.sourceType==='meal' && typeof renderMyDayUI==='function' && _activeTab==='myday') renderMyDayUI();
 }
 // Répercute l'état "fait/pas fait" d'une tâche planifiée vers l'élément de la Bibliothèque
 // (liste de tâches) dont elle est issue, quand elle a été créée automatiquement depuis celui-ci.
 function syncSourceItemDone(planTask) {
-  if(!planTask || planTask.sourceType !== 'todo') return;
-  const l = todoLists.find(x=>x.id===planTask.sourceListId); if(!l) return;
-  const it = l.todos.find(x=>x.id===planTask.sourceItemId); if(!it) return;
-  it.done = planTask.done;
-  if(it.done) { it.completedDate = formatDateString(new Date()); it.completedAt = new Date().toISOString(); }
-  else { it.completedDate = null; it.completedAt = null; }
+  if(!planTask) return;
+  if(planTask.sourceType === 'todo') {
+    const l = todoLists.find(x=>x.id===planTask.sourceListId); if(!l) return;
+    const it = l.todos.find(x=>x.id===planTask.sourceItemId); if(!it) return;
+    it.done = planTask.done;
+    if(it.done) { it.completedDate = formatDateString(new Date()); it.completedAt = new Date().toISOString(); }
+    else { it.completedDate = null; it.completedAt = null; }
+    return;
+  }
+  if(planTask.sourceType === 'meal') {
+    const m = (mealLog[planTask.sourceMealDate]||[]).find(x=>x.id===planTask.sourceMealId); if(!m) return;
+    m.done = planTask.done;
+    return;
+  }
 }
 function deletePlanTask(id) {
   const t = planTasks.find(x=>x.id===id);
@@ -3838,6 +3977,10 @@ function deletePlanTask(id) {
   if(t && t.sourceType === 'note') {
     const n = notes.find(x=>x.id===t.sourceNoteId);
     if(n) delete n.planTaskId;
+  }
+  if(t && t.sourceType === 'meal') {
+    const m = (mealLog[t.sourceMealDate]||[]).find(x=>x.id===t.sourceMealId);
+    if(m) delete m.planTaskId;
   }
   planTasks = planTasks.filter(t=>t.id!==id);
   saveData(); renderPlanningUI(); showToast('Tâche supprimée.');
@@ -4404,7 +4547,8 @@ function renderPlanningUI() {
       filterContainer.innerHTML='';
       const filterDefs=[
         {key:'notes', label:'Notes du jour', icon:'📝', active:'var(--purple)', activeBg:'var(--purple-bg)', activeText:'var(--purple-text)'},
-        {key:'tasks', label:'Dossier Projet', icon:'✓', active:'var(--blue)', activeBg:'var(--blue-bg)', activeText:'var(--blue)'}
+        {key:'tasks', label:'Dossier Projet', icon:'✓', active:'var(--blue)', activeBg:'var(--blue-bg)', activeText:'var(--blue)'},
+        {key:'meals', label:'Repas', icon:'🍽️', active:'var(--orange)', activeBg:'var(--orange-bg)', activeText:'var(--orange-text)'}
       ];
       filterDefs.forEach(def=>{
         const isOn=journalFilter[def.key];
@@ -4461,23 +4605,27 @@ function renderPlanningUI() {
     // Récupère les items accomplis (+ non terminés, quand ils ont une date propre) pour une date donnée
     function buildJournalItems(jDateStr){
       const items=[];
-      if(journalFilter.tasks){
+      if(journalFilter.tasks || journalFilter.meals){
         planTasks.filter(t=>t.done&&normalizePlanCompletedAt(t.completedAt,t.date)&&formatDateString(new Date(normalizePlanCompletedAt(t.completedAt,t.date)+':00'))===jDateStr)
           .filter(t=>isFolderVisible(getPlanTaskFolderId(t)))
+          .filter(t=>t.sourceType==='meal' ? journalFilter.meals : journalFilter.tasks)
           .forEach(t=>{
             // L'heure de fin d'origine est sauvegardée dans _originalEndTime au moment où la tâche est cochée
             // (endTime est alors remplacé par l'heure d'achèvement pour la timeline du jour).
             const realEnd = Object.prototype.hasOwnProperty.call(t,'_originalEndTime') ? t._originalEndTime : t.endTime;
-            const libRef = t.sourceType ? {type:t.sourceType, listId:t.sourceListId, noteId:t.sourceNoteId} : null;
+            const libRef = (t.sourceType==='todo'||t.sourceType==='note') ? {type:t.sourceType, listId:t.sourceListId, noteId:t.sourceNoteId} : null;
             items.push({type:'planning',name:t.name,sub:t.startTime?(t.startTime+(realEnd?' → '+realEnd:'')):'',completedAt:normalizePlanCompletedAt(t.completedAt,t.date),itemId:t.id,interactive:!libRef,libRef});
           });
         // Tâches planifiées non terminées, prévues ce jour-là (elles ont une date propre : t.date)
         planTasks.filter(t=>!t.done&&t.date===jDateStr)
           .filter(t=>isFolderVisible(getPlanTaskFolderId(t)))
+          .filter(t=>t.sourceType==='meal' ? journalFilter.meals : journalFilter.tasks)
           .forEach(t=>{
-          const libRef = t.sourceType ? {type:t.sourceType, listId:t.sourceListId, noteId:t.sourceNoteId} : null;
+          const libRef = (t.sourceType==='todo'||t.sourceType==='note') ? {type:t.sourceType, listId:t.sourceListId, noteId:t.sourceNoteId} : null;
           items.push({type:'planning',name:t.name,sub:t.startTime?(t.startTime+(t.endTime?' → '+t.endTime:'')):'',completedAt:null,itemId:t.id,interactive:!libRef,pending:true,libRef});
         });
+      }
+      if(journalFilter.tasks){
         todoLists.forEach(list=>{
           if(!list.todos) return;
           if(!isFolderVisible(list.folderId)) return;
@@ -4512,15 +4660,18 @@ function renderPlanningUI() {
     }
 
     // Construit l'ensemble de toutes les dates ayant du contenu de journal
-    // (en tenant compte des filtres Notes du jour / Tâches / Objectifs actifs)
+    // (en tenant compte des filtres Notes du jour / Tâches / Repas actifs)
     const dateSet=new Set();
-    if(journalFilter.tasks){
+    if(journalFilter.tasks || journalFilter.meals){
       planTasks.forEach(t=>{
         if(!isFolderVisible(getPlanTaskFolderId(t))) return;
+        if(t.sourceType==='meal' ? !journalFilter.meals : !journalFilter.tasks) return;
         const cAt=normalizePlanCompletedAt(t.completedAt,t.date);
         if(t.done&&cAt) dateSet.add(formatDateString(new Date(cAt+':00')));
         if(!t.done&&t.date) dateSet.add(t.date); // tâche planifiée non terminée : visible à sa date prévue
       });
+    }
+    if(journalFilter.tasks){
       todoLists.forEach(list=>{
         if(!list.todos) return;
         if(!isFolderVisible(list.folderId)) return;
@@ -4605,11 +4756,11 @@ function renderPlanningUI() {
           }
         }
 
-        const items=journalFilter.tasks ? buildJournalItems(jDateStr) : [];
+        const items=(journalFilter.tasks || journalFilter.meals) ? buildJournalItems(jDateStr) : [];
         const listWrap=document.createElement('div');
         listWrap.style.marginTop='12px';
-        if(!journalFilter.tasks){
-          // Filtre "Dossier Projet" désactivé : on n'affiche que la note du jour.
+        if(!journalFilter.tasks && !journalFilter.meals){
+          // Filtres "Dossier Projet" et "Repas" désactivés : on n'affiche que la note du jour.
         } else if(items.length===0){
           listWrap.innerHTML='<div class="empty-state">Aucune tâche accomplie ce jour.</div>';
         } else {
