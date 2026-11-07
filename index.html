@@ -2409,8 +2409,23 @@ body>.row:first-child,body>.row.subrow{
 #rightside.hidden{display:none}
 /* L'onglet Sidebar reprend la barre droite à l'identique, en grand panneau central. */
 body.sidebar-tab #content{display:none}
-body.sidebar-tab #rightside{display:flex;flex:1;width:auto;min-width:0}
+body.sidebar-tab #side{display:none!important}
+body.sidebar-tab #rightside{display:flex;flex:1;width:auto;min-width:0;border-left:2px solid #0c0502}
 body.sidebar-tab #rightbody{padding:18px 22px;gap:11px}
+body.sidebar-tab main{gap:0}
+#rightside .rj-section{flex:none;min-height:0;display:flex;flex-direction:column;gap:5px}
+#rightside .rj-section-head{display:flex;align-items:center;width:100%;height:auto;min-height:27px;padding:3px 2px;border:0;border-bottom:1px solid rgba(90,65,35,.25);border-radius:0;background:transparent;color:#59452e;font:700 13px var(--font);text-align:left;cursor:pointer}
+#rightside .rj-section-head:after{content:'⌄';margin-left:auto;font-size:16px;line-height:1;transition:transform .15s}
+#rightside .rj-section.collapsed .rj-section-head:after{transform:rotate(-90deg)}
+#rightside .rj-section.collapsed .rj-section-content{display:none}
+#rightside .rj-section-content{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:3px;padding:1px 2px}
+#rightside .rj-habits{max-height:25%}
+#rightside .rj-tasks{max-height:34%}
+#rightside .rj-habit{display:flex;align-items:flex-start;gap:6px;padding:4px 5px;background:rgba(248,242,228,.48);border:1px solid rgba(155,137,105,.35);border-radius:2px;color:#30271e;font:12px/1.3 var(--font)}
+#rightside .rj-habit input{flex:none;margin:1px 0 0;accent-color:#8c3024}
+#rightside .rj-habit.done span{opacity:.55;text-decoration:line-through}
+#rightside .rj-section .rj-task-list{max-height:100%;overflow:visible}
+
 @media(max-width:680px){body.sidebar-tab #rightside{display:flex}}
 #rightbody{display:flex;flex-direction:column;gap:9px;flex:1;min-height:0;padding:14px 12px 10px;overflow:hidden}
 #rightside .rj-head{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 1px 8px;border-bottom:1px solid rgba(90,65,35,.35)}
@@ -2422,6 +2437,11 @@ body.sidebar-tab #rightbody{padding:18px 22px;gap:11px}
 #rightside .rj-colors{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:3px 0}
 #rightside .rj-colors .sw{width:17px;height:17px;min-width:17px;border:1px solid rgba(50,35,20,.4);border-radius:50%;padding:0;cursor:pointer}
 #rightside .rj-colors .reset{height:19px;padding:0 5px;border:1px solid #a99b80;border-radius:3px;background:rgba(248,242,228,.6);color:#594a36;font-size:11px;cursor:pointer}
+#rightside .rj-objectives{flex:none;min-height:0;max-height:25%;display:flex;flex-direction:column;gap:5px}
+#rightside .rj-objectives h3{margin:0;color:#59452e;font:700 13px var(--font);padding:0 1px 4px;border-bottom:1px solid rgba(90,65,35,.25)}
+#rightside .rj-objectives textarea{display:block;width:100%;min-height:52px;max-height:110px;resize:vertical;overflow:auto;padding:7px 8px;background:rgba(248,242,228,.68);border:1px solid rgba(155,137,105,.48);border-radius:2px;box-shadow:inset 0 1px rgba(255,255,255,.45);color:#30271e;font:12px/1.4 var(--font);outline:none}
+#rightside .rj-objectives textarea:focus{border-color:#a98c60;box-shadow:inset 0 0 0 1px rgba(116,80,35,.12)}
+#rightside .rj-objectives textarea::placeholder{color:#958b79;font-style:italic}
 #rightside .rj-tasks{flex:none;min-height:0;max-height:34%;display:flex;flex-direction:column;gap:5px}
 #rightside .rj-tasks h3{margin:0;color:#59452e;font:700 13px var(--font);padding:0 1px 4px;border-bottom:1px solid rgba(90,65,35,.25)}
 #rightside .rj-task-list{overflow:auto;min-height:0;display:flex;flex-direction:column;gap:3px;padding:1px 2px}
@@ -2441,6 +2461,27 @@ body.sidebar-tab #rightbody{padding:18px 22px;gap:11px}
 #rightside .rj-quick{width:100%;height:38px;justify-content:flex-start;border:1px solid #8c7654;border-radius:3px;background:rgba(248,242,228,.58);color:#30271e;font:600 14px var(--font);box-shadow:inset 0 1px rgba(255,255,255,.5),0 1px 2px rgba(56,38,17,.08)}
 #rightside .rj-quick:hover{background:#ead8bb;color:#8c3024}
 #rightside .rj-quick .ic{width:19px;height:19px}
+
+/* Mode Aujourd'hui : concentration et progression */
+#rightside .rj-modebar{display:flex;gap:5px}
+#rightside .rj-modebar button{flex:1;padding:5px;border:1px solid #9b8969;border-radius:3px;background:rgba(248,242,228,.65);color:#59452e;font:600 11px var(--font);cursor:pointer}
+#rightside .rj-modebar button.active{background:#8c3024;color:#fff4df;border-color:#6f2119}
+#rightside .rj-progress{padding:7px;background:rgba(248,242,228,.45);border:1px solid rgba(155,137,105,.35);display:flex;flex-direction:column;gap:6px}
+#rightside .rj-progress-title{font:700 12px var(--font);color:#59452e}
+#rightside .rj-progress-line{display:grid;grid-template-columns:68px 1fr 34px;gap:6px;align-items:center;font:11px var(--font);color:#594a36}
+#rightside .rj-progress-track{height:6px;background:rgba(90,65,35,.16);border-radius:5px;overflow:hidden}
+#rightside .rj-progress-fill{height:100%;background:#729477;border-radius:5px}
+#rightside .rj-focus{padding:9px;background:rgba(248,242,228,.65);border:1px solid #b7a17d;display:flex;flex-direction:column;gap:8px}
+#rightside .rj-focus label{font:700 12px var(--font);color:#59452e}
+#rightside .rj-focus select{width:100%;padding:6px;background:#f8f2e4;border:1px solid #b7a17d;color:#30271e;font:12px var(--font)}
+#rightside .rj-timer{font:700 30px/1.2 var(--font);text-align:center;color:#493321;font-variant-numeric:tabular-nums}
+#rightside .rj-timer-actions{display:flex;gap:5px}
+#rightside .rj-timer-actions button{flex:1;padding:6px 3px;border:1px solid #9b8969;border-radius:3px;background:#eadfc9;color:#493321;font:600 11px var(--font);cursor:pointer}
+#rightside .rj-focus-task{font:12px var(--font);color:#594a36;text-align:center;overflow-wrap:anywhere}
+#rightside.mode-work .rj-objectives,#rightside.mode-work .rj-section,#rightside.mode-work .rj-colors,#rightside.mode-work .rj-editor{display:none}
+#rightside.mode-work .rj-progress,#rightside.mode-work .rj-focus{display:flex}
+#rightside:not(.mode-work) .rj-focus{display:none}
+
 @media(max-width:900px){#rightside{width:205px} .side{width:190px}}
 @media(max-width:680px){#rightside{display:none}}
 
@@ -3767,19 +3808,39 @@ function renderRightSidebar(){
   const allDay=(S.tasks||[]).filter(t=>t.d===key);
   const scheduled=dayParts(key).sort((a,b)=>a.s-b.s);
   const taskRows=[];
-  allDay.forEach(t=>taskRows.push(`<label class='rj-task${t.done?' done':''}'><input type='checkbox' data-rj-kind='all' data-rj-id='${t.id}' ${t.done?'checked':''}><span class='rj-task-name'>${escH(t.text||'Sans nom')}</span><span class='rj-task-time'>À faire</span></label>`));
+  const focusChoices=[];
+  allDay.forEach(t=>{focusChoices.push({id:'all|'+t.id,name:t.text||'Sans nom'});taskRows.push(`<label class='rj-task${t.done?' done':''}'><input type='checkbox' data-rj-kind='all' data-rj-id='${t.id}' ${t.done?'checked':''}><span class='rj-task-name'>${escH(t.text||'Sans nom')}</span><span class='rj-task-time'>À faire</span></label>`)});
   scheduled.forEach(x=>{
     const o=x.o,kind=x.k,origin=x.origin||key;
     let name='',time=fmtHM(x.s)+'–'+fmtHM(x.e),done=false;
     if(kind==='ev'){const pr=S.projects.find(p=>p.id===o.p);name=pr?pr.name:'Projet';}
     else if(kind==='dt'){name=o.name||'Sans nom';done=!!S.checks[o.id+'|'+origin];}
     else {const tpl=S.ptasks.find(t=>t.id===o.tid);name=tpl?tpl.name:'Tâche';done=!!S.checks[o.id+'|'+origin];}
+    if(kind!=='ev')focusChoices.push({id:kind+'|'+o.id+'|'+origin,name:name+' · '+time});
     const check=kind==='ev'?'':`<input type='checkbox' data-rj-kind='${kind}' data-rj-id='${o.id}' data-rj-day='${origin}' ${done?'checked':''}>`;
     taskRows.push(`<label class='rj-task${done?' done':''}${kind==='ev'?' rj-task-event':''}'>${check}<span class='rj-task-name'>${escH(name)}</span><span class='rj-task-time'>${time}</span></label>`);
   });
-  const taskMarkup=`<section class='rj-tasks'><h3>Tâches du jour</h3><div class='rj-task-list'>${taskRows.join('')||`<div class='rj-task-empty'>Aucune tâche prévue.</div>`}</div></section>`;
+  // Habitudes prévues ce jour, avec leur état de validation propre à la date.
+  const weekday=(new Date(Y,M-1,D).getDay()+6)%7;
+  const habitRows=(S.habits||[]).filter(h=>Array.isArray(h.days)&&h.days.includes(weekday)).map(h=>{
+    const done=!!S.checks[h.id+'|'+key];
+    return `<label class='rj-habit${done?' done':''}'><input type='checkbox' data-rj-habit='${h.id}' ${done?'checked':''}><span>${escH(h.name||'Sans nom')}</span></label>`;
+  });
+  // Objectifs permanents : un seul contenu partagé par toutes les dates.
+  if(typeof S.objectivesText!=='string')S.objectivesText='';
+  const objectiveMarkup=`<section class='rj-objectives'><h3>Objectifs</h3><textarea class='rj-objectives-editor' rows='3' spellcheck='true' placeholder='Un objectif par ligne…'>${escH(S.objectivesText)}</textarea></section>`;
+  const habitMarkup=`<section class='rj-section rj-habits'><button type='button' class='rj-section-head' aria-expanded='true'>Habitudes</button><div class='rj-section-content'>${habitRows.join('')||`<div class='rj-task-empty'>Aucune habitude prévue.</div>`}</div></section>`;
+  const taskMarkup=`<section class='rj-section rj-tasks'><button type='button' class='rj-section-head' aria-expanded='true'>Tâches du jour</button><div class='rj-section-content rj-task-list'>${taskRows.join('')||`<div class='rj-task-empty'>Aucune tâche prévue.</div>`}</div></section>`;
   const colors=NOTE_COLORS.map(c=>`<button type='button' class='sw' data-col='${c[0]}' title='${c[1]}' style='background:${c[0]}'></button>`).join('');
-  body.innerHTML=`<section class='rj-head'><h2>Journal</h2></section><div class='rj-nav'><button type='button' class='rj-prev' title='Jour précédent'>‹</button><span class='rj-date'>${escH(label)}</span><button type='button' class='rj-next' title='Jour suivant'>›</button></div>${taskMarkup}<div class='rj-colors' role='toolbar' aria-label='Couleur du texte'>${colors}<button type='button' class='reset' data-col='' title='Couleur par défaut'>Défaut</button></div><div class='rj-editor' contenteditable='true' spellcheck='true' data-ph='Écris ta journée…'></div><div class='rj-bottom'><button class='rj-quick'><span class='ic'>${IC.note}</span><span>Note rapide</span></button></div>`;
+  const taskDone=allDay.filter(t=>t.done).length+scheduled.filter(x=>x.k!=='ev'&&!!S.checks[x.o.id+'|'+(x.origin||key)]).length;
+  const taskTotal=allDay.length+scheduled.filter(x=>x.k!=='ev').length;
+  const habitDone=habitRows.filter(x=>x.includes(" checked")).length,habitTotal=habitRows.length;
+  const pct=(a,b)=>b?Math.round(a/b*100):0;
+  const focusOptions=focusChoices.map(x=>`<option value="${escH(x.id)}">${escH(x.name)}</option>`).join('');
+  body.innerHTML=`<section class='rj-head'><h2>Journal</h2></section><div class='rj-nav'><button type='button' class='rj-prev' title='Jour précédent'>‹</button><span class='rj-date'>${escH(label)}</span><button type='button' class='rj-next' title='Jour suivant'>›</button></div><div class='rj-modebar'><button type='button' class='rj-full active'>Vue complète</button><button type='button' class='rj-work'>Vue travail</button></div><section class='rj-progress'><div class='rj-progress-title'>Progression de la journée</div><div class='rj-progress-line'><span>Tâches</span><div class='rj-progress-track'><div class='rj-progress-fill' style='width:${pct(taskDone,taskTotal)}%'></div></div><b>${taskDone}/${taskTotal}</b></div><div class='rj-progress-line'><span>Habitudes</span><div class='rj-progress-track'><div class='rj-progress-fill' style='width:${pct(habitDone,habitTotal)}%'></div></div><b>${habitDone}/${habitTotal}</b></div></section><section class='rj-focus'><label for='rj-focus-select'>Tâche en cours</label><select id='rj-focus-select'><option value=''>Choisir une tâche…</option>${focusOptions}</select><div class='rj-focus-task'>Concentre-toi sur une seule chose.</div><div class='rj-timer'>25:00</div><div class='rj-timer-actions'><button type='button' class='rj-timer-start'>Démarrer</button><button type='button' class='rj-timer-reset'>Réinitialiser</button></div></section>${objectiveMarkup}${habitMarkup}${taskMarkup}<div class='rj-colors' role='toolbar' aria-label='Couleur du texte'>${colors}<button type='button' class='reset' data-col='' title='Couleur par défaut'>Défaut</button></div><div class='rj-editor' contenteditable='true' spellcheck='true' data-ph='Écris ta journée…'></div><div class='rj-bottom'><button class='rj-quick'><span class='ic'>${IC.note}</span><span>Note rapide</span></button></div>`;
+  body.querySelectorAll('.rj-section-head').forEach(head=>head.onclick=()=>{const section=head.closest('.rj-section');const collapsed=section.classList.toggle('collapsed');head.setAttribute('aria-expanded',String(!collapsed));});
+  body.querySelectorAll('.rj-habit input').forEach(cb=>cb.onchange=()=>{const id=cb.dataset.rjHabit,ck=id+'|'+key;if(cb.checked)S.checks[ck]=1;else delete S.checks[ck];cb.closest('.rj-habit').classList.toggle('done',cb.checked);save()});
+  body.querySelector('.rj-objectives-editor').oninput=e=>{S.objectivesText=e.currentTarget.value;save()};
   body.querySelectorAll('.rj-task input').forEach(cb=>cb.onchange=()=>{
     const row=cb.closest('.rj-task'),kind=cb.dataset.rjKind,id=cb.dataset.rjId;
     if(kind==='all'){const task=S.tasks.find(t=>t.id===id);if(task)task.done=cb.checked;}
@@ -3788,11 +3849,32 @@ function renderRightSidebar(){
   });
   const toolbar=body.querySelector('.rj-colors');
   bindRich(entry,body.querySelector('.rj-editor'),toolbar);
+  const fullBtn=body.querySelector('.rj-full'),workBtn=body.querySelector('.rj-work');
+  const setMode=work=>{side.classList.toggle('mode-work',work);fullBtn.classList.toggle('active',!work);workBtn.classList.toggle('active',work);};
+  fullBtn.onclick=()=>setMode(false);workBtn.onclick=()=>setMode(true);
+  const focusSelect=body.querySelector('#rj-focus-select'),focusLabel=body.querySelector('.rj-focus-task');
+  focusSelect.onchange=()=>{const opt=focusSelect.selectedOptions[0];focusLabel.textContent=opt&&opt.value?opt.textContent:'Concentre-toi sur une seule chose.';};
+  const timerEl=body.querySelector('.rj-timer'),startBtn=body.querySelector('.rj-timer-start');
+  if(!window.__rjTimer)window.__rjTimer={left:1500,running:false,stamp:0};
+  const timer=window.__rjTimer;
+  const paintTimer=()=>{const n=Math.max(0,timer.left),mm=String(Math.floor(n/60)).padStart(2,'0'),ss=String(n%60).padStart(2,'0');timerEl.textContent=mm+':'+ss;startBtn.textContent=timer.running?'Pause':'Démarrer';};
+  if(timer.running&&timer.stamp){timer.left=Math.max(0,timer.left-Math.floor((Date.now()-timer.stamp)/1000));timer.stamp=Date.now();if(!timer.left)timer.running=false;}
+  paintTimer();
+  startBtn.onclick=()=>{if(timer.running){timer.running=false;timer.stamp=0;}else{if(!timer.left)timer.left=1500;timer.running=true;timer.stamp=Date.now();}paintTimer();};
+  body.querySelector('.rj-timer-reset').onclick=()=>{timer.left=1500;timer.running=false;timer.stamp=0;paintTimer();};
   body.querySelector('.rj-prev').onclick=()=>{const d=new Date(Y,M-1,D);d.setDate(d.getDate()-1);rightJournalKey=dayKey(d);renderRightSidebar()};
   body.querySelector('.rj-next').onclick=()=>{const d=new Date(Y,M-1,D);d.setDate(d.getDate()+1);rightJournalKey=dayKey(d);renderRightSidebar()};
   body.querySelector('.rj-quick').onclick=()=>openNote();
 }
 let rightJournalDate='';
+setInterval(()=>{
+  const timer=window.__rjTimer;if(!timer||!timer.running)return;
+  const now=Date.now(),elapsed=Math.floor((now-(timer.stamp||now))/1000);
+  if(elapsed>0){timer.left=Math.max(0,timer.left-elapsed);timer.stamp=now;if(!timer.left)timer.running=false;
+    const el=document.querySelector('#rightbody .rj-timer'),btn=document.querySelector('#rightbody .rj-timer-start');
+    if(el){el.textContent=String(Math.floor(timer.left/60)).padStart(2,'0')+':'+String(timer.left%60).padStart(2,'0');if(!timer.running&&btn)btn.textContent='Démarrer';}
+  }
+},1000);
 setInterval(()=>{
   const now=dayKey(new Date());
   if(now!==rightJournalDate){if(!rightJournalKey||rightJournalKey===rightJournalDate)rightJournalKey=now;rightJournalDate=now;renderRightSidebar();}
